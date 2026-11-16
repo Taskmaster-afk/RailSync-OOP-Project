@@ -1,0 +1,4 @@
+# Windows batch scripts must keep CRLF line endings; the Unix wrapper script must keep LF.
+*.cmd text eol=crlf
+mvnw  text eol=lf
+*.png binary
