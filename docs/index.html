@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<!--
+  RailSync project preview: renders the README, the guides, the UML diagrams and the screenshots
+  in one browsable page. Serve the PROJECT ROOT over HTTP (preview-docs.cmd does this with the
+  JDK's built-in jwebserver) and open http://localhost:8080/docs/ .
+  Markdown is rendered with marked and diagrams with Mermaid, both loaded from a CDN.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RailSync - project preview</title>
+<style>
+  :root { --bg:#f6f7f9; --panel:#fff; --text:#1f2328; --muted:#59636e; --line:#d1d9e0; --accent:#3478dc; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.6 system-ui, "Segoe UI", sans-serif; color:var(--text); background:var(--bg); }
+  header { position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:14px; padding:10px 20px;
+           background:var(--panel); border-bottom:1px solid var(--line); }
+  header b { font-size:18px; }
+  header span { color:var(--muted); font-size:13px; }
+  .layout { display:flex; max-width:1400px; margin:0 auto; }
+  nav { width:230px; flex-shrink:0; padding:18px 12px; position:sticky; top:52px; align-self:flex-start; }
+  nav a { display:block; padding:6px 10px; border-radius:6px; color:var(--text); text-decoration:none; font-size:14px; }
+  nav a:hover { background:#e9edf2; }
+  nav a.active { background:var(--accent); color:#fff; }
+  nav .group { margin:14px 10px 4px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  main { flex:1; min-width:0; padding:20px 28px 60px; }
+  article { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:26px 34px; }
+  article img { max-width:100%; border:1px solid var(--line); border-radius:6px; }
+  article table { border-collapse:collapse; display:block; overflow-x:auto; margin:12px 0; }
+  article th, article td { border:1px solid var(--line); padding:6px 10px; vertical-align:top; }
+  article th { background:#f0f3f6; }
+  article code { background:#eff1f3; padding:1px 5px; border-radius:4px; font-size:90%; }
+  article pre { background:#f6f8fa; border:1px solid var(--line); border-radius:6px; padding:12px; overflow-x:auto; }
+  article pre code { background:none; padding:0; }
+  article h1, article h2 { border-bottom:1px solid var(--line); padding-bottom:6px; }
+  .mermaid { background:#fff; overflow-x:auto; text-align:center; margin:14px 0; }
+  .gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(380px, 1fr)); gap:18px; }
+  .gallery figure { margin:0; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px; }
+  .gallery figcaption { font-size:13px; color:var(--muted); padding:6px 4px 0; }
+  .error { color:#c22; }
+</style>
+</head>
+<body>
+<header><b>RailSync</b><span>Railway Platform Allocation &amp; Scheduling Simulator - project preview</span></header>
+<div class="layout">
+  <nav id="nav"></nav>
+  <main><article id="content">Loading...</article></main>
+</div>
+
+<script type="module">
+import { marked } from "https://cdn.jsdelivr.net/npm/marked@15/lib/marked.esm.js";
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+mermaid.initialize({ startOnLoad: false, securityLevel: "strict" });
+
+// Pages: id -> Markdown file (paths are relative to this docs/ folder).
+const PAGES = [
+  { group: "Start here" },
+  { id: "readme", title: "Overview (README)", file: "../README.md" },
+  { id: "screens", title: "Screenshots" },
+  { id: "guide", title: "User guide", file: "USER_GUIDE.md" },
+  { group: "For the viva" },
+  { id: "viva", title: "Viva guide", file: "VIVA_GUIDE.md" },
+  { id: "oop", title: "OOP concepts", file: "OOP_CONCEPTS.md" },
+  { id: "patterns", title: "Design patterns", file: "DESIGN_PATTERNS.md" },
+  { id: "uml", title: "UML diagrams", file: "UML_DIAGRAMS.md" },
+  { id: "classes", title: "Class explanation", file: "CLASS_EXPLANATION.md" },
+  { group: "Project" },
+  { id: "progress", title: "Build log & decisions", file: "PROGRESS.md" },
+];
+
+const SCREENSHOTS = [
+  ["final-dashboard.png", "Dashboard with the live event log"],
+  ["final-allocation.png", "Allocation: strategy, settings and explained results"],
+  ["final-trains.png", "Train management"],
+  ["final-platforms.png", "Platform management with compatibility check"],
+  ["final-schedule.png", "Schedule of every booking"],
+  ["final-time-distance.png", "Time-distance (Gantt) diagram"],
+  ["final-delay-after.png", "Delay ripple: ghosts and red ripple outlines"],
+  ["final-after-undo.png", "After Undo: every booking back in place"],
+  ["final-breakdown-after.png", "PF-2 breakdown: S-201 moved, others stranded"],
+  ["final-yard-view.png", "Top-down yard view with the ready queue"],
+  ["final-comparison.png", "Strategy comparison arena"],
+  ["final-reports.png", "Text report and metrics"],
+];
+
+const nav = document.getElementById("nav");
+const content = document.getElementById("content");
+
+// Step 1: build the sidebar.
+for (const page of PAGES) {
+  if (page.group) {
+    nav.insertAdjacentHTML("beforeend", `<div class="group">${page.group}</div>`);
+  } else {
+    nav.insertAdjacentHTML("beforeend", `<a href="#${page.id}" data-id="${page.id}">${page.title}</a>`);
+  }
+}
+
+// Turns a link written relative to one Markdown file into one relative to this page.
+function resolve(link, fromFile) {
+  if (/^([a-z]+:|#|\/)/i.test(link)) return link;
+  const base = new URL(fromFile, location.href);
+  return new URL(link, base).href;
+}
+
+// Step 2: show one page. Each call gets a ticket; if a newer page was asked for while this one
+// was still loading, the older one stops, so fast clicking can never show the wrong page.
+let latestTicket = 0;
+async function show(id) {
+  const ticket = ++latestTicket;
+  const page = PAGES.find(p => p.id === id) || PAGES[1];
+  for (const a of nav.querySelectorAll("a")) a.classList.toggle("active", a.dataset.id === page.id);
+  window.scrollTo(0, 0);
+
+  if (page.id === "screens") {
+    content.innerHTML = "<h1>Screenshots</h1><p>Captured from the real application window (final build).</p>"
+      + '<div class="gallery">' + SCREENSHOTS.map(([file, caption]) =>
+        `<figure><a href="screenshots/${file}" target="_blank"><img src="screenshots/${file}" alt="${caption}"></a>`
+        + `<figcaption>${caption}</figcaption></figure>`).join("") + "</div>";
+    return;
+  }
+
+  try {
+    const response = await fetch(page.file);
+    if (!response.ok) throw new Error(`${page.file}: HTTP ${response.status}`);
+    const markdown = await response.text();
+    if (ticket !== latestTicket) return;
+    content.innerHTML = marked.parse(markdown);
+  } catch (e) {
+    if (ticket !== latestTicket) return;
+    content.innerHTML = `<p class="error">Could not load ${page.file} (${e.message}). Serve the project root over HTTP.</p>`;
+    return;
+  }
+
+  // Step 3: fix image and link paths, and turn links to other .md files into links inside this preview.
+  for (const img of content.querySelectorAll("img")) img.src = resolve(img.getAttribute("src"), page.file);
+  for (const a of content.querySelectorAll("a[href]")) {
+    const href = a.getAttribute("href");
+    const target = PAGES.find(p => p.file && href && resolve(href.split("#")[0], page.file) === resolve(p.file, location.href));
+    if (target) { a.href = "#" + target.id; continue; }
+    if (!/^#/.test(href)) { a.href = resolve(href, page.file); a.target = "_blank"; }
+  }
+
+  // Step 4: draw every ```mermaid block as a diagram.
+  const blocks = content.querySelectorAll("code.language-mermaid");
+  let index = 0;
+  for (const code of blocks) {
+    const holder = document.createElement("div");
+    holder.className = "mermaid";
+    try {
+      const { svg } = await mermaid.render("diagram" + ticket + "-" + (index++), code.textContent);
+      if (ticket !== latestTicket) return;
+      holder.innerHTML = svg;
+    } catch (e) {
+      holder.innerHTML = `<p class="error">Diagram error: ${e.message}</p>`;
+    }
+    code.parentElement.replaceWith(holder);
+  }
+}
+
+window.addEventListener("hashchange", () => show(location.hash.slice(1)));
+show(location.hash.slice(1) || "readme");
+</script>
+</body>
+</html>

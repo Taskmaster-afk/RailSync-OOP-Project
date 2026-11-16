@@ -91,6 +91,10 @@ mvnw.cmd test
 java -cp target\classes com.railsync.ConsoleDemo
 ```
 
+To browse all the documentation (README, guides, rendered UML diagrams, screenshots) as a small website,
+double-click `preview-docs.cmd`. It serves the project on http://localhost:8080/docs/ with the JDK's built-in
+`jwebserver` (Java 18+) and opens your browser; press Ctrl+C in its window to stop.
+
 ## Using it
 
 The app starts with the demo scenario loaded but not allocated. A five-minute tour:
