@@ -78,6 +78,13 @@ public class YardView extends JPanel implements ScheduleObserver, SimulationCloc
         clock.addListener(this);
     }
 
+    /** Uses the theme's canvas colour as background, also after a light/dark switch. */
+    @Override
+    public void updateUI() {
+        super.updateUI();
+        setBackground(Theme.canvas());
+    }
+
     /**
      * Repaints after any schedule change.
      *
@@ -231,9 +238,11 @@ public class YardView extends JPanel implements ScheduleObserver, SimulationCloc
     /** The ready-queue box with one line per waiting train, in arrival order. */
     private void drawQueue(Graphics2D g, List<String> queue, List<Color> colors) {
         int height = Math.max(service.getStation().getPlatformCount() * ROW_HEIGHT, (queue.size() + 2) * QUEUE_SLOT);
-        g.setColor(UIManager.getColor("Label.foreground"));
+        // A thin, softly rounded outline, matching the cards elsewhere in the app.
+        g.setColor(Theme.lineColor());
         g.setStroke(new BasicStroke(1f));
-        g.drawRect(QUEUE_X, TOP - 30, QUEUE_WIDTH, height);
+        g.drawRoundRect(QUEUE_X, TOP - 30, QUEUE_WIDTH, height, 10, 10);
+        g.setColor(UIManager.getColor("Label.foreground"));
         g.setFont(getFont().deriveFont(Font.BOLD, 12f));
         g.drawString("Ready queue (outer signal): " + queue.size(), QUEUE_X + 6, TOP - 14);
         g.setFont(getFont().deriveFont(11f));

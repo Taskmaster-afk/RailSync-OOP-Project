@@ -5,8 +5,14 @@ import com.railsync.model.TrainType;
 import com.railsync.service.DemoScenarioLoader;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
@@ -32,13 +38,13 @@ public final class Ui {
     public static final LocalDate SERVICE_DAY = DemoScenarioLoader.SERVICE_DAY;
 
     /** Colour for express trains (blue), used in tables and diagrams. */
-    public static final Color EXPRESS_COLOR = new Color(52, 120, 220);
+    public static final Color EXPRESS_COLOR = new Color(59, 111, 182);
     /** Colour for passenger trains (green). */
-    public static final Color PASSENGER_COLOR = new Color(40, 160, 90);
+    public static final Color PASSENGER_COLOR = new Color(46, 139, 87);
     /** Colour for freight trains (amber). */
-    public static final Color FREIGHT_COLOR = new Color(210, 140, 30);
+    public static final Color FREIGHT_COLOR = new Color(196, 128, 42);
     /** Colour for conflicts and failures (red). */
-    public static final Color CONFLICT_COLOR = new Color(215, 60, 60);
+    public static final Color CONFLICT_COLOR = new Color(192, 57, 43);
 
     private static final DateTimeFormatter HH_MM = DateTimeFormatter.ofPattern("HH:mm");
 
@@ -90,16 +96,60 @@ public final class Ui {
     }
 
     /**
-     * Creates a bold section heading.
+     * Creates the header at the top of every screen: a clear title with one
+     * quiet line underneath saying what the screen is for.
      *
-     * @param text heading text
-     * @return the label
+     * @param title    the screen title, e.g. "Allocation"
+     * @param subtitle one short sentence in plain words
+     * @return the header component
      */
-    public static JLabel heading(String text) {
-        JLabel label = new JLabel(text);
-        label.setFont(label.getFont().deriveFont(Font.BOLD, 18f));
-        label.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
-        return label;
+    public static JComponent header(String title, String subtitle) {
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.putClientProperty("FlatLaf.styleClass", "h2");
+        JLabel subtitleLabel = new JLabel(subtitle);
+        subtitleLabel.setForeground(Theme.mutedText());
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.add(titleLabel);
+        panel.add(Box.createVerticalStrut(2));
+        panel.add(subtitleLabel);
+        panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+        return panel;
+    }
+
+    /**
+     * Gives the main action of a screen the accent colour (like a "default"
+     * button), so the eye finds it first. Use at most one per area.
+     *
+     * @param button the button to emphasise
+     * @return the same button
+     */
+    public static JButton primary(JButton button) {
+        // Filled with the accent colour, white bold text, a little darker on hover and press.
+        String accent = Theme.ACCENT_HEX;
+        button.putClientProperty("FlatLaf.style", "background: " + accent + "; foreground: #ffffff;"
+                + " borderColor: " + accent + "; focusedBorderColor: " + accent + "; focusedBackground: " + accent + ";"
+                + " hoverBackground: darken(" + accent + ",6%); pressedBackground: darken(" + accent + ",12%);"
+                + " font: bold");
+        return button;
+    }
+
+    /**
+     * Puts a small bold label above a component, to group related controls.
+     * Replaces the old etched "titled box" borders with a lighter look.
+     *
+     * @param title the section name
+     * @param body  the content
+     * @return a panel holding both
+     */
+    public static JPanel section(String title, JComponent body) {
+        JLabel label = new JLabel(title);
+        label.putClientProperty("FlatLaf.styleClass", "h4");
+        label.setBorder(BorderFactory.createEmptyBorder(0, 2, 6, 0));
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(label, BorderLayout.NORTH);
+        panel.add(body, BorderLayout.CENTER);
+        return panel;
     }
 
     /** @return a monospaced font for report text */

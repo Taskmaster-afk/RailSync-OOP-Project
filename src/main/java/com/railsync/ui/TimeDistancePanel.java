@@ -38,15 +38,17 @@ public class TimeDistancePanel extends RefreshablePanel {
         controls.add(clearGhosts);
 
         // Step 2: a colour legend so the drawing explains itself.
-        JLabel legend = new JLabel("<html>Lines: <font color='#3478DC'>express</font>, "
-                + "<font color='#28A05A'>passenger</font>, <font color='#D28C1E'>freight</font>. "
+        JLabel legend = new JLabel("<html>Lines: <font color='#3B6FB6'>express</font>, "
+                + "<font color='#2E8B57'>passenger</font>, <font color='#C4802A'>freight</font>. "
                 + "Thick flat part = time at the platform (Gantt bar). "
-                + "<font color='#D73C3C'>Red flat part on the outer signal = waiting in the queue; "
+                + "<font color='#C0392B'>Red flat part on the outer signal = waiting in the queue; "
                 + "red X = no platform; red outline = pushed by a ripple.</font> "
                 + "Dashed faded line = old position (ghost).</html>");
 
         JPanel north = new JPanel(new BorderLayout());
-        north.add(Ui.heading("Time-Distance Diagram (Gantt / occupancy view)"), BorderLayout.NORTH);
+        north.add(Ui.header("Time-Distance",
+                "Each line is one train's path into the station; the thick flat part is its time at the platform (Gantt view)."),
+                BorderLayout.NORTH);
         north.add(controls, BorderLayout.CENTER);
         north.add(legend, BorderLayout.SOUTH);
         add(north, BorderLayout.NORTH);

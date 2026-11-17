@@ -1,6 +1,5 @@
 package com.railsync;
 
-import com.formdev.flatlaf.FlatLightLaf;
 import com.railsync.model.Schedule;
 import com.railsync.model.Station;
 import com.railsync.observer.ScheduleEventManager;
@@ -8,6 +7,7 @@ import com.railsync.service.DemoScenarioLoader;
 import com.railsync.service.SchedulingService;
 import com.railsync.strategy.FcfsStrategy;
 import com.railsync.ui.MainFrame;
+import com.railsync.ui.Theme;
 
 import javax.swing.SwingUtilities;
 
@@ -34,8 +34,8 @@ public final class Main {
      * @param args not used
      */
     public static void main(String[] args) {
-        // Step 1: modern look and feel (FlatLaf). Must be set before any window is created.
-        FlatLightLaf.setup();
+        // Step 1: RailSync's look and feel (FlatLaf + Theme). Must be set before any window is created.
+        Theme.apply(false);
         // Step 2: Swing objects must be created on the Swing event thread.
         SwingUtilities.invokeLater(Main::createAndShow);
     }

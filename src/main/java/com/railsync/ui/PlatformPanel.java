@@ -6,7 +6,6 @@ import com.railsync.model.PlatformStatus;
 import com.railsync.model.Train;
 import com.railsync.service.SchedulingService;
 
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -49,11 +48,10 @@ public class PlatformPanel extends RefreshablePanel {
         model = new PlatformTableModel(service);
         table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setRowHeight(24);
         table.getColumnModel().getColumn(3).setCellRenderer(new StatusRenderer());
         table.getSelectionModel().addListSelectionListener(e -> showCompatibility());
 
-        JButton add = new JButton("Add platform");
+        JButton add = Ui.primary(new JButton("Add platform"));
         add.addActionListener(e -> new PlatformFormDialog(SwingUtilities.getWindowAncestor(this), service, null).setVisible(true));
         JButton edit = new JButton("Edit");
         edit.addActionListener(e -> editSelected());
@@ -68,14 +66,15 @@ public class PlatformPanel extends RefreshablePanel {
         tools.add(repair);
 
         JPanel north = new JPanel(new BorderLayout());
-        north.add(Ui.heading("Platform Management"), BorderLayout.NORTH);
+        north.add(Ui.header("Platforms",
+                "Lengths, accepted train types and status. Select a platform to see which trains can use it."), BorderLayout.NORTH);
         north.add(tools, BorderLayout.CENTER);
 
         compatibility.setEditable(false);
         compatibility.setFont(Ui.monoFont());
         JScrollPane compatibilityScroll = new JScrollPane(compatibility);
-        compatibilityScroll.setBorder(BorderFactory.createTitledBorder("Compatibility of the selected platform"));
-        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(table), compatibilityScroll);
+        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(table),
+                Ui.section("Compatibility of the selected platform", compatibilityScroll));
         split.setResizeWeight(0.5);
 
         add(north, BorderLayout.NORTH);

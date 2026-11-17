@@ -116,6 +116,13 @@ public class TimeDistanceDiagram extends JPanel implements ScheduleObserver, Sim
     // Reacting to changes.
     // ------------------------------------------------------------------
 
+    /** Uses the theme's canvas colour as background, also after a light/dark switch. */
+    @Override
+    public void updateUI() {
+        super.updateUI();
+        setBackground(Theme.canvas());
+    }
+
     /**
      * Repaints after any change; starts the ghost animation after a delay or breakdown.
      *

@@ -5,7 +5,6 @@ import com.railsync.model.Train;
 import com.railsync.service.AllocationResult;
 import com.railsync.service.SchedulingService;
 
-import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -44,7 +43,6 @@ public class SchedulePanel extends RefreshablePanel {
         super(service);
         model = new ReservationTableModel(service);
         JTable table = new JTable(model);
-        table.setRowHeight(24);
 
         platformFilter.setRenderer(new PlatformRenderer());
         platformFilter.addActionListener(e -> {
@@ -62,12 +60,13 @@ public class SchedulePanel extends RefreshablePanel {
         unallocated.setWrapStyleWord(true);
         unallocated.setFont(Ui.monoFont());
         JScrollPane unallocatedScroll = new JScrollPane(unallocated);
-        unallocatedScroll.setBorder(BorderFactory.createTitledBorder("Trains without a platform"));
 
         JPanel north = new JPanel(new BorderLayout());
-        north.add(Ui.heading("Schedule"), BorderLayout.NORTH);
+        north.add(Ui.header("Schedule",
+                "Every platform booking in time order, and the trains that are still without a platform."), BorderLayout.NORTH);
         north.add(tools, BorderLayout.CENTER);
-        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(table), unallocatedScroll);
+        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(table),
+                Ui.section("Trains without a platform", unallocatedScroll));
         split.setResizeWeight(0.75);
         add(north, BorderLayout.NORTH);
         add(split, BorderLayout.CENTER);

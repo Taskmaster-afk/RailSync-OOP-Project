@@ -8,14 +8,16 @@ import com.railsync.service.SchedulingService;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.UIManager;
+import javax.swing.JSeparator;
 import java.awt.BorderLayout;
+import java.awt.Color;
 
 /**
  * The strip at the bottom of the window: the latest event on the left
- * (red for conflicts and breakdowns) and the current settings on the right.
+ * (with a red dot for conflicts and breakdowns) and the current settings on the right.
  *
- * <p>Shows: last event message, strategy, buffer, maximum wait.
+ * <p>Shows: a coloured dot (green = routine, red = conflict or breakdown), the
+ * last event message, and the strategy, buffer and maximum wait.
  * Observes: every ScheduleEvent. Calls: only read methods of SchedulingService.</p>
  *
  * <p>OOP concepts: [OBSERVER] (implements ScheduleObserver directly, since it
@@ -23,7 +25,11 @@ import java.awt.BorderLayout;
  */
 public class StatusBar extends JPanel implements ScheduleObserver {
 
+    /** Green dot: the last event was routine. */
+    private static final Color OK_COLOR = new Color(46, 139, 87);
+
     private final SchedulingService service;
+    private final JLabel dot = new JLabel("●");
     private final JLabel lastEvent = new JLabel("Ready.");
     private final JLabel settings = new JLabel();
 
@@ -35,9 +41,19 @@ public class StatusBar extends JPanel implements ScheduleObserver {
     public StatusBar(SchedulingService service) {
         super(new BorderLayout());
         this.service = service;
-        setBorder(BorderFactory.createEmptyBorder(4, 10, 4, 10));
-        add(lastEvent, BorderLayout.CENTER);
-        add(settings, BorderLayout.EAST);
+        // A thin line on top, then the message (with a coloured dot) on the left and the settings on the right.
+        dot.setForeground(OK_COLOR);
+        dot.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 6));
+        settings.setForeground(Theme.mutedText());
+        JPanel message = new JPanel(new BorderLayout());
+        message.add(dot, BorderLayout.WEST);
+        message.add(lastEvent, BorderLayout.CENTER);
+        JPanel row = new JPanel(new BorderLayout(12, 0));
+        row.setBorder(BorderFactory.createEmptyBorder(5, 14, 6, 14));
+        row.add(message, BorderLayout.CENTER);
+        row.add(settings, BorderLayout.EAST);
+        add(new JSeparator(), BorderLayout.NORTH);
+        add(row, BorderLayout.CENTER);
         service.getEvents().subscribe(this);
         updateSettings();
     }
@@ -54,16 +70,17 @@ public class StatusBar extends JPanel implements ScheduleObserver {
         if (newline >= 0) {
             text = text.substring(0, newline);
         }
-        lastEvent.setText(event.getType() + ": " + text);
+        lastEvent.setText(text);
+        lastEvent.setToolTipText(event.getType().toString());
         boolean bad = event.getType() == ScheduleEventType.CONFLICT || event.getType() == ScheduleEventType.BREAKDOWN;
-        lastEvent.setForeground(bad ? Ui.CONFLICT_COLOR : UIManager.getColor("Label.foreground"));
+        dot.setForeground(bad ? Ui.CONFLICT_COLOR : OK_COLOR);
         updateSettings();
     }
 
     private void updateSettings() {
-        settings.setText("Strategy: " + service.getStrategy().getName()
-                + "   |   Buffer: " + service.getSchedule().getClearanceBufferMinutes() + " min"
-                + "   |   Max wait: " + service.getMaxWaitMinutes() + " min"
-                + (service.isPreemptionEnabled() ? "   |   Preemption ON" : ""));
+        settings.setText(service.getStrategy().getName()
+                + "   ·   buffer " + service.getSchedule().getClearanceBufferMinutes() + " min"
+                + "   ·   max wait " + service.getMaxWaitMinutes() + " min"
+                + (service.isPreemptionEnabled() ? "   ·   preemption on" : ""));
     }
 }

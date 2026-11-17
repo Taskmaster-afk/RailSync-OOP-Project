@@ -1,6 +1,5 @@
 package com.railsync.ui;
 
-import com.formdev.flatlaf.FlatLightLaf;
 import com.railsync.model.Schedule;
 import com.railsync.model.Station;
 import com.railsync.observer.ScheduleEventManager;
@@ -43,7 +42,7 @@ public final class ScreenshotMaker {
      */
     public static void main(String[] args) throws Exception {
         String prefix = args.length > 0 ? args[0] : "screen";
-        FlatLightLaf.setup();
+        Theme.apply(args.length > 1 && args[1].equals("dark"));
 
         // Step 1: build the window, load the demo, allocate with FCFS, capture every screen.
         SwingUtilities.invokeAndWait(() -> {

@@ -206,6 +206,7 @@ Every class also has a header comment in the source with the same information.
 | `ComparisonPanel` | Arena table, seed and train count, load generated | `StrategyArena`, `ScenarioGenerator` | - (on demand) |
 | `ReportsPanel` | Full text report | `ReportGenerator` | all events |
 | `StatusBar` | Last event and current settings | read only | all events |
+| `Theme` | The look: one accent colour, rounded corners, slim scrollbars, airy tables; light or dark mode | FlatLaf | - |
 | `SimulationClock` | Simulated time via a Swing Timer (100 ms ticks, 1x/10x/60x) | - | - |
 | `ClockControls` | Play/Pause, speed, jump to start (shared by two screens) | clock | clock |
 | `StrategyListRenderer`, `Ui` | Strategy names in drop-downs; time format/parse, colours, dialogs | - | - |

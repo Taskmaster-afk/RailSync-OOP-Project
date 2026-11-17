@@ -1,12 +1,12 @@
 package com.railsync.ui;
 
+import com.formdev.flatlaf.ui.FlatLineBorder;
 import com.railsync.model.Platform;
 import com.railsync.observer.ScheduleEvent;
 import com.railsync.observer.ScheduleEventType;
 import com.railsync.service.ScheduleMetrics;
 import com.railsync.service.SchedulingService;
 
-import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -14,11 +14,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
-import javax.swing.UIManager;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
@@ -59,10 +58,11 @@ public class DashboardPanel extends RefreshablePanel {
      */
     public DashboardPanel(SchedulingService service) {
         super(service);
-        add(Ui.heading("Dashboard"), BorderLayout.NORTH);
+        add(Ui.header("Dashboard",
+                "The station at a glance: allocation results, waiting times and every event as it happens."), BorderLayout.NORTH);
 
         // Step 1: a grid of number cards.
-        JPanel cards = new JPanel(new GridLayout(2, 5, 10, 10));
+        JPanel cards = new JPanel(new GridLayout(2, 5, 12, 12));
         cards.add(card("Trains", trainsValue));
         cards.add(card("Allocated", allocatedValue));
         cards.add(card("Unallocated", unallocatedValue));
@@ -75,7 +75,7 @@ public class DashboardPanel extends RefreshablePanel {
         cards.add(card("Needed for zero wait", neededValue));
 
         // Step 2: strategy line and a short "how to demo" guide.
-        strategyLabel.setFont(strategyLabel.getFont().deriveFont(Font.BOLD, 14f));
+        strategyLabel.putClientProperty("FlatLaf.style", "font: bold +1");
         JTextArea guide = new JTextArea(2, 60);
         guide.setText(
                 "Demo guide: 1) Allocation: choose FCFS, press Allocate.  2) Reset, choose Priority, Allocate again "
@@ -85,11 +85,13 @@ public class DashboardPanel extends RefreshablePanel {
         guide.setLineWrap(true);
         guide.setWrapStyleWord(true);
         guide.setOpaque(false);
-        JPanel middle = new JPanel(new BorderLayout(6, 6));
+        guide.setFocusable(false);
+        guide.setForeground(Theme.mutedText());
+        JPanel middle = new JPanel(new BorderLayout(6, 4));
         middle.add(strategyLabel, BorderLayout.NORTH);
         middle.add(guide, BorderLayout.CENTER);
 
-        JPanel top = new JPanel(new BorderLayout(10, 10));
+        JPanel top = new JPanel(new BorderLayout(10, 16));
         top.add(cards, BorderLayout.NORTH);
         top.add(middle, BorderLayout.CENTER);
 
@@ -97,11 +99,11 @@ public class DashboardPanel extends RefreshablePanel {
         JList<String> log = new JList<>(logModel);
         log.setFont(Ui.monoFont());
         JScrollPane logScroll = new JScrollPane(log);
-        logScroll.setBorder(BorderFactory.createTitledBorder("Event log (every ScheduleEvent received by this panel)"));
 
-        JPanel body = new JPanel(new BorderLayout(10, 10));
+        JPanel body = new JPanel(new BorderLayout(10, 16));
         body.add(top, BorderLayout.NORTH);
-        body.add(logScroll, BorderLayout.CENTER);
+        body.add(Ui.section("Event log  ·  every ScheduleEvent this screen has received, newest first", logScroll),
+                BorderLayout.CENTER);
         add(body, BorderLayout.CENTER);
         refresh();
     }
@@ -152,23 +154,39 @@ public class DashboardPanel extends RefreshablePanel {
                 + "    (change it on the Allocation screen)");
     }
 
-    /** Builds one card: a big number above a small caption. */
+    /** Builds one card: a small quiet caption above a large number. */
     private JPanel card(String caption, JLabel value) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(UIManager.getColor("Component.borderColor")),
-                BorderFactory.createEmptyBorder(10, 12, 10, 12)));
-        value.setFont(value.getFont().deriveFont(Font.BOLD, 24f));
+        JPanel panel = new Card();
+        value.putClientProperty("FlatLaf.styleClass", "h1");
         value.setHorizontalAlignment(SwingConstants.LEFT);
         JLabel label = new JLabel(caption);
-        label.setForeground(UIManager.getColor("Label.disabledForeground"));
+        label.putClientProperty("FlatLaf.style", "font: -1");
+        label.setForeground(Theme.mutedText());
+        panel.add(label, BorderLayout.NORTH);
         panel.add(value, BorderLayout.CENTER);
-        panel.add(label, BorderLayout.SOUTH);
         return panel;
     }
 
+    /**
+     * Colour for normal values. Null means "inherit from the look and feel", so
+     * the numbers follow the light/dark theme automatically.
+     */
     private static Color normalColor() {
-        return UIManager.getColor("Label.foreground");
+        return null;
+    }
+
+    /** A card with a thin, softly rounded outline that follows the light/dark theme. */
+    private static final class Card extends JPanel {
+        private Card() {
+            super(new BorderLayout(0, 4));
+        }
+
+        /** Re-creates the outline in the current theme's line colour. */
+        @Override
+        public void updateUI() {
+            super.updateUI();
+            setBorder(new FlatLineBorder(new Insets(10, 14, 10, 14), Theme.lineColor(), 1f, 10));
+        }
     }
 
     private static String pad(ScheduleEventType type) {

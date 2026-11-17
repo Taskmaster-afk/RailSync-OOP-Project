@@ -213,3 +213,21 @@ Verification, all actually run on this machine:
 | Javadoc on every public/protected type and member (main sources) | 0 missing (automated scan) |
 | Every test method has a scenario comment | 165 of 165 |
 | TODO / FIXME left | 0 |
+
+## UI refresh (after Stage 8)
+
+A calm, classic look with no new features and no behaviour changes:
+
+- New `Theme` class: one accent colour (#3B6FB6), rounded corners, slim scrollbars, airy tables (horizontal lines
+  only, 28 px rows, cell padding, subtle alternating rows), and the same settings in light and dark mode.
+- Sidebar grouped under small section labels (Overview, Data, Planning, Visualise, Analysis) with flat navigation
+  items; thin separator lines instead of heavy borders.
+- Every screen starts with a title and one plain-English line saying what it is for (`Ui.header`).
+- Etched "titled box" borders replaced by light labelled sections (`Ui.section`); the main action on each screen is
+  a filled accent button (`Ui.primary`).
+- Dashboard cards: caption above a large value, inside a thin rounded outline. Status bar: green or red dot, then
+  the message, with the settings in muted text.
+- Diagrams draw on a clean canvas colour; slightly softer train-type colours.
+- Font sizes use FlatLaf's own text styles, because custom half-point sizes were clipped under Windows display scaling.
+
+Verified: 165 tests pass; the app was captured in light and dark mode (`docs/screenshots/final-*`, `dark-*`).

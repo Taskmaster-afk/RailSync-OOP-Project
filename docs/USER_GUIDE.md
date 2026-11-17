@@ -1,8 +1,10 @@
 # RailSync User Guide
 
 Start the app with `run-app.cmd` (or `java -jar target\railsync-1.0.0.jar` after a build). The window has a
-toolbar at the top, the list of screens on the left, and a status bar at the bottom. The status bar shows the latest
-event (red for conflicts and breakdowns) and the current strategy, buffer and maximum wait.
+toolbar at the top, the screens on the left (grouped as Overview, Data, Planning, Visualise and Analysis), and a
+status bar at the bottom. The status bar shows the latest event, with a green dot for routine events and a red dot
+for conflicts and breakdowns, plus the current strategy, buffer and maximum wait. Every screen starts with a title
+and one line saying what it is for, and the main action on a screen is the blue button.
 
 All times are on one simulated service day (16 Nov 2026) and are typed as `HH:mm`, e.g. `08:15`.
 

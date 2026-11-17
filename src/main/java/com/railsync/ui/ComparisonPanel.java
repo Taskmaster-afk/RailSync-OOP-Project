@@ -83,7 +83,7 @@ public class ComparisonPanel extends JPanel {
         ButtonGroup sourceGroup = new ButtonGroup();
         sourceGroup.add(liveSource);
         sourceGroup.add(generatedSource);
-        JButton run = new JButton("Run comparison");
+        JButton run = Ui.primary(new JButton("Run comparison"));
         run.addActionListener(e -> runComparison());
         JButton load = new JButton("Load generated scenario into the app");
         load.addActionListener(e -> loadGenerated());
@@ -99,7 +99,6 @@ public class ComparisonPanel extends JPanel {
 
         // Step 2: the results table; the best value in each column is shown in bold.
         JTable table = new JTable(tableModel);
-        table.setRowHeight(26);
         table.setDefaultRenderer(Object.class, new BestValueRenderer());
 
         notes.setEditable(false);
@@ -107,14 +106,14 @@ public class ComparisonPanel extends JPanel {
         notes.setWrapStyleWord(true);
         notes.setText("Press \"Run comparison\". Each strategy runs on its own copy, so the live schedule never changes.");
         JScrollPane notesScroll = new JScrollPane(notes);
-        notesScroll.setBorder(BorderFactory.createTitledBorder("How to read this"));
 
         JPanel north = new JPanel(new BorderLayout());
-        north.add(Ui.heading("Strategy Comparison Arena"), BorderLayout.NORTH);
+        north.add(Ui.header("Strategy Comparison",
+                "The same trains through every strategy, side by side. The live schedule is never changed."), BorderLayout.NORTH);
         north.add(source, BorderLayout.CENTER);
         add(north, BorderLayout.NORTH);
         add(new JScrollPane(table), BorderLayout.CENTER);
-        add(notesScroll, BorderLayout.SOUTH);
+        add(Ui.section("How to read this", notesScroll), BorderLayout.SOUTH);
     }
 
     /** Runs all four strategies on the chosen scenario and fills the table. */

@@ -63,7 +63,8 @@ public class YardPanel extends RefreshablePanel {
         strategyRow.add(new JLabel("  (re-plans only trains that have not reached a platform yet)"));
 
         JPanel north = new JPanel(new BorderLayout());
-        north.add(Ui.heading("Yard View (top-down, follows the simulation clock)"), BorderLayout.NORTH);
+        north.add(Ui.header("Yard View",
+                "The station from above at the simulated time, with the queue of trains waiting at the outer signal."), BorderLayout.NORTH);
         north.add(controls, BorderLayout.CENTER);
         north.add(strategyRow, BorderLayout.SOUTH);
         add(north, BorderLayout.NORTH);

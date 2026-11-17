@@ -7,8 +7,9 @@ import com.railsync.model.TrainStatus;
 import com.railsync.model.TrainType;
 import com.railsync.service.SchedulingService;
 
+import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -48,7 +49,6 @@ public class TrainPanel extends RefreshablePanel {
         model = new TrainTableModel(service);
         table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setRowHeight(24);
         table.setAutoCreateRowSorter(false);
         table.setRowSorter(new TableRowSorter<>(model));
         // Colour the Type and Status columns so categories and problems stand out.
@@ -70,23 +70,30 @@ public class TrainPanel extends RefreshablePanel {
         JButton view = new JButton("View schedule");
         view.addActionListener(e -> viewSelected());
 
-        JPanel tools = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        tools.add(new JLabel("Search by number:"));
-        tools.add(searchField);
-        tools.add(find);
+        // Tools in three quiet groups: the main action, editing, then search on the right.
+        Ui.primary(add);
+        searchField.putClientProperty("JTextField.placeholderText", "Train number");
+        JPanel tools = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         tools.add(add);
+        tools.add(Box.createHorizontalStrut(8));
         tools.add(edit);
         tools.add(remove);
         tools.add(release);
         tools.add(view);
+        JPanel search = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        search.add(searchField);
+        search.add(find);
+        JPanel toolRow = new JPanel(new BorderLayout());
+        toolRow.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+        toolRow.add(tools, BorderLayout.WEST);
+        toolRow.add(search, BorderLayout.EAST);
 
         JPanel north = new JPanel(new BorderLayout());
-        north.add(Ui.heading("Train Management"), BorderLayout.NORTH);
-        north.add(tools, BorderLayout.CENTER);
+        north.add(Ui.header("Trains",
+                "Add, edit and search trains. Priority = base priority + type bonus (express +3, passenger +1, freight 0)."), BorderLayout.NORTH);
+        north.add(toolRow, BorderLayout.CENTER);
         add(north, BorderLayout.NORTH);
         add(new JScrollPane(table), BorderLayout.CENTER);
-        add(new JLabel("Priority = base priority + type bonus (express +3, passenger +1, freight 0). "
-                + "Times use the simulated service day."), BorderLayout.SOUTH);
         refresh();
     }
 

@@ -9,7 +9,6 @@ import com.railsync.service.DelayReport;
 import com.railsync.service.DemoScenarioLoader;
 import com.railsync.service.SchedulingService;
 
-import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -55,10 +54,9 @@ public class DisruptionPanel extends RefreshablePanel {
 
         // Step 1: delay controls.
         trainBox.setRenderer(new NameRenderer());
-        JButton applyDelay = new JButton("Apply delay");
+        JButton applyDelay = Ui.primary(new JButton("Apply delay"));
         applyDelay.addActionListener(e -> applyDelay((Train) trainBox.getSelectedItem(), (Integer) minutesSpinner.getValue()));
         JPanel delayBox = new JPanel(new GridLayout(0, 1, 4, 4));
-        delayBox.setBorder(BorderFactory.createTitledBorder("Delay a train (Module E)"));
         delayBox.add(trainBox);
         delayBox.add(labelled("Delay (min):", minutesSpinner));
         delayBox.add(applyDelay);
@@ -68,7 +66,6 @@ public class DisruptionPanel extends RefreshablePanel {
         JButton breakdown = new JButton("Report breakdown");
         breakdown.addActionListener(e -> breakDown((Platform) platformBox.getSelectedItem()));
         JPanel breakdownBox = new JPanel(new GridLayout(0, 1, 4, 4));
-        breakdownBox.setBorder(BorderFactory.createTitledBorder("Platform breakdown (Module E2)"));
         breakdownBox.add(platformBox);
         breakdownBox.add(breakdown);
 
@@ -80,14 +77,13 @@ public class DisruptionPanel extends RefreshablePanel {
         JButton demoBreakdown = new JButton("Demo: break down PF-2");
         demoBreakdown.addActionListener(e -> breakDown(service.getPlatformManager().findById(DemoScenarioLoader.BREAKDOWN_PLATFORM_ID)));
         JPanel demoBox = new JPanel(new GridLayout(0, 1, 4, 4));
-        demoBox.setBorder(BorderFactory.createTitledBorder("Scripted demo (after FCFS allocation)"));
         demoBox.add(demoDelay);
         demoBox.add(demoBreakdown);
 
         JPanel controls = new JPanel(new GridLayout(0, 1, 8, 8));
-        controls.add(delayBox);
-        controls.add(breakdownBox);
-        controls.add(demoBox);
+        controls.add(Ui.section("Delay a train", delayBox));
+        controls.add(Ui.section("Platform breakdown", breakdownBox));
+        controls.add(Ui.section("Scripted demo (after FCFS allocation)", demoBox));
 
         // Step 4: the report of the last action.
         report.setEditable(false);
@@ -97,17 +93,17 @@ public class DisruptionPanel extends RefreshablePanel {
         report.setText("Apply a delay or a breakdown. The result is explained here, and the diagram below "
                 + "animates the change: the old line stays as a faded dashed ghost.");
         JScrollPane reportScroll = new JScrollPane(report);
-        reportScroll.setBorder(BorderFactory.createTitledBorder("What happened"));
 
         JPanel left = new JPanel(new BorderLayout(8, 8));
         left.add(controls, BorderLayout.NORTH);
-        left.add(reportScroll, BorderLayout.CENTER);
+        left.add(Ui.section("What happened", reportScroll), BorderLayout.CENTER);
         left.setPreferredSize(new Dimension(420, 10));
 
         JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, left,
                 new JScrollPane(new TimeDistanceDiagram(service, clock)));
         split.setResizeWeight(0.0);
-        add(Ui.heading("Delay & Breakdown"), BorderLayout.NORTH);
+        add(Ui.header("Delay & Breakdown",
+                "Delay a train or take a platform out of service, and see exactly what moved and why."), BorderLayout.NORTH);
         add(split, BorderLayout.CENTER);
         refresh();
     }

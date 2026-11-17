@@ -1,8 +1,6 @@
 package com.railsync.ui;
 
-import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLaf;
-import com.formdev.flatlaf.FlatLightLaf;
 import com.railsync.exception.RailSyncException;
 import com.railsync.service.DemoScenarioLoader;
 import com.railsync.service.Scenario;
@@ -21,15 +19,16 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
-import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Font;
+import java.awt.FlowLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
@@ -56,7 +55,7 @@ public class MainFrame extends JFrame {
     private final SimulationClock clock = new SimulationClock(Ui.SERVICE_DAY.atTime(7, 50));
     private final CardLayout cards = new CardLayout();
     private final JPanel content = new JPanel(cards);
-    private final JPanel sidebar = new JPanel();
+    private final JPanel sidebar = new SidebarPanel();
     private final ButtonGroup navGroup = new ButtonGroup();
     private final List<JToggleButton> navButtons = new ArrayList<>();
     private final List<String> screenNames = new ArrayList<>();
@@ -75,26 +74,55 @@ public class MainFrame extends JFrame {
         setSize(1360, 820);
         setLocationRelativeTo(null);
 
-        // Step 1: the three fixed parts of the window.
-        add(buildToolbar(), BorderLayout.NORTH);
+        // Step 1: the fixed parts of the window, divided by thin lines instead of heavy borders.
+        JPanel top = new JPanel(new BorderLayout());
+        top.add(buildToolbar(), BorderLayout.CENTER);
+        top.add(new JSeparator(), BorderLayout.SOUTH);
+        add(top, BorderLayout.NORTH);
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
-        sidebar.setBorder(BorderFactory.createEmptyBorder(12, 8, 12, 8));
-        add(sidebar, BorderLayout.WEST);
+        sidebar.setBorder(BorderFactory.createEmptyBorder(14, 10, 14, 10));
+        sidebar.setPreferredSize(new Dimension(196, 10));
+        JPanel west = new JPanel(new BorderLayout());
+        west.add(sidebar, BorderLayout.CENTER);
+        west.add(new JSeparator(JSeparator.VERTICAL), BorderLayout.EAST);
+        add(west, BorderLayout.WEST);
         add(content, BorderLayout.CENTER);
         add(new StatusBar(service), BorderLayout.SOUTH);
 
-        // Step 2: one sidebar entry per screen.
+        // Step 2: one sidebar entry per screen, grouped under small section labels.
+        addGroup("Overview");
         addScreen("Dashboard", new DashboardPanel(service));
+        addGroup("Data");
         addScreen("Trains", new TrainPanel(service));
         addScreen("Platforms", new PlatformPanel(service));
+        addGroup("Planning");
         addScreen("Allocation", new AllocationPanel(service));
         addScreen("Schedule", new SchedulePanel(service));
-        addScreen("Time-Distance", new TimeDistancePanel(service, clock));
         addScreen("Delay & Breakdown", new DisruptionPanel(service, clock));
+        addGroup("Visualise");
+        addScreen("Time-Distance", new TimeDistancePanel(service, clock));
         addScreen("Yard View", new YardPanel(service, clock));
+        addGroup("Analysis");
         addScreen("Comparison", new ComparisonPanel(service));
         addScreen("Reports", new ReportsPanel(service));
         showScreen("Dashboard");
+    }
+
+    /**
+     * Adds a small, quiet section label to the sidebar (e.g. "PLANNING").
+     *
+     * @param title the section name
+     */
+    private void addGroup(String title) {
+        if (!screenNames.isEmpty()) {
+            sidebar.add(Box.createVerticalStrut(12));
+        }
+        JLabel label = new JLabel(title.toUpperCase());
+        label.putClientProperty("FlatLaf.style", "font: bold -2");
+        label.setForeground(Theme.mutedText());
+        label.setBorder(BorderFactory.createEmptyBorder(0, 10, 4, 0));
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        sidebar.add(label);
     }
 
     /**
@@ -106,15 +134,19 @@ public class MainFrame extends JFrame {
     public final void addScreen(String name, Component screen) {
         content.add(screen, name);
         JToggleButton button = new JToggleButton(name);
+        // Flat, borderless navigation item; FlatLaf tints the selected one with the accent colour.
+        button.putClientProperty("JButton.buttonType", "toolBarButton");
         button.setAlignmentX(Component.LEFT_ALIGNMENT);
-        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
         button.setHorizontalAlignment(JToggleButton.LEFT);
+        button.setMargin(new Insets(6, 10, 6, 10));
+        button.setFocusable(false);
         button.addActionListener(e -> showScreen(name));
         navGroup.add(button);
         navButtons.add(button);
         screenNames.add(name);
         sidebar.add(button);
-        sidebar.add(Box.createVerticalStrut(4));
+        sidebar.add(Box.createVerticalStrut(2));
     }
 
     /**
@@ -142,14 +174,15 @@ public class MainFrame extends JFrame {
 
     private JPanel buildToolbar() {
         JPanel bar = new JPanel(new BorderLayout());
-        bar.setBorder(BorderFactory.createEmptyBorder(8, 14, 8, 14));
+        bar.setBorder(BorderFactory.createEmptyBorder(10, 18, 10, 14));
         JLabel title = new JLabel("RailSync");
-        title.setFont(title.getFont().deriveFont(Font.BOLD, 20f));
-        JLabel subtitle = new JLabel("   platforms = CPUs, trains = processes, allocator = OS scheduler");
-        subtitle.setForeground(UIManager.getColor("Label.disabledForeground"));
-        JPanel left = new JPanel();
-        left.setLayout(new BoxLayout(left, BoxLayout.X_AXIS));
+        // FlatLaf text styles (scaled correctly on high-DPI screens, so nothing gets clipped).
+        title.putClientProperty("FlatLaf.styleClass", "h2");
+        JLabel subtitle = new JLabel("Platform allocation & scheduling simulator");
+        subtitle.setForeground(Theme.mutedText());
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         left.add(title);
+        left.add(Box.createHorizontalStrut(12));
         left.add(subtitle);
 
         // Undo button (also Ctrl+Z). Its label and enabled state follow every schedule event.
@@ -174,11 +207,24 @@ public class MainFrame extends JFrame {
         loadDemo.addActionListener(e -> loadDemo());
         JCheckBox dark = new JCheckBox("Dark mode");
         dark.addActionListener(e -> switchTheme(dark.isSelected()));
-        JPanel right = new JPanel();
+        // Quiet, borderless toolbar buttons; only "Load demo" keeps a normal button outline.
+        undoButton.putClientProperty("JButton.buttonType", "toolBarButton");
+        open.putClientProperty("JButton.buttonType", "toolBarButton");
+        save.putClientProperty("JButton.buttonType", "toolBarButton");
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
         right.add(undoButton);
+        right.add(new JSeparator(JSeparator.VERTICAL) {
+            /** A short divider line, about the height of a toolbar button. */
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(1, 22);
+            }
+        });
         right.add(open);
         right.add(save);
+        right.add(Box.createHorizontalStrut(6));
         right.add(loadDemo);
+        right.add(Box.createHorizontalStrut(6));
         right.add(dark);
 
         bar.add(left, BorderLayout.WEST);
@@ -259,13 +305,19 @@ public class MainFrame extends JFrame {
                 + "Go to Allocation, pick a strategy and press \"Allocate all pending trains\".");
     }
 
-    /** Switches between FlatLaf light and dark themes and repaints every component. */
+    /** Switches between the light and dark themes and repaints every component. */
     private void switchTheme(boolean darkMode) {
-        if (darkMode) {
-            FlatDarkLaf.setup();
-        } else {
-            FlatLightLaf.setup();
-        }
+        Theme.apply(darkMode);
         FlatLaf.updateUI();
+    }
+
+    /** The sidebar: a slightly different background, refreshed when the theme changes. */
+    private static final class SidebarPanel extends JPanel {
+        /** Re-reads the sidebar colour whenever the look and feel is (re)installed. */
+        @Override
+        public void updateUI() {
+            super.updateUI();
+            setBackground(Theme.sidebarBackground());
+        }
     }
 }

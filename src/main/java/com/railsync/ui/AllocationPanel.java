@@ -10,7 +10,6 @@ import com.railsync.strategy.PriorityAgingStrategy;
 import com.railsync.strategy.PriorityStrategy;
 import com.railsync.strategy.ShortestDwellFirstStrategy;
 
-import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -26,6 +25,7 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.util.List;
 
 /**
@@ -90,31 +90,36 @@ public class AllocationPanel extends RefreshablePanel {
         settings.add(new JLabel("Preemption"));
         settings.add(preemptionBox);
 
+        // The strategy explanation reads as plain text, not as a boxed input field.
         description.setEditable(false);
         description.setLineWrap(true);
         description.setWrapStyleWord(true);
-        JScrollPane descriptionScroll = new JScrollPane(description);
-        descriptionScroll.setBorder(BorderFactory.createTitledBorder("How this strategy works"));
+        description.setOpaque(false);
+        description.setFocusable(false);
 
-        // Step 3: actions.
-        JButton allocateAll = new JButton("Allocate all pending trains");
+        // Step 3: actions. The main one is emphasised; the single-train pair sits on one row.
+        JButton allocateAll = Ui.primary(new JButton("Allocate all pending trains"));
         allocateAll.addActionListener(e -> allocateAll());
         singleTrainBox.setRenderer(new TrainRenderer());
         JButton allocateOne = new JButton("Allocate this train");
         allocateOne.addActionListener(e -> allocateOne());
         JButton reset = new JButton("Reset all allocations");
         reset.addActionListener(e -> resetAll());
+        JPanel singleRow = new JPanel(new BorderLayout(6, 0));
+        singleRow.add(singleTrainBox, BorderLayout.CENTER);
+        singleRow.add(allocateOne, BorderLayout.EAST);
         JPanel actions = new JPanel(new GridLayout(0, 1, 6, 6));
-        actions.setBorder(BorderFactory.createTitledBorder("Actions"));
         actions.add(allocateAll);
-        actions.add(singleTrainBox);
-        actions.add(allocateOne);
+        actions.add(singleRow);
         actions.add(reset);
 
-        JPanel left = new JPanel(new BorderLayout(8, 8));
-        left.add(settings, BorderLayout.NORTH);
-        left.add(descriptionScroll, BorderLayout.CENTER);
-        left.add(actions, BorderLayout.SOUTH);
+        // The three sections are stacked at the top; any spare height stays below them, not between them.
+        JPanel stack = new JPanel(new BorderLayout(0, 16));
+        stack.add(Ui.section("Strategy and settings", settings), BorderLayout.NORTH);
+        stack.add(Ui.section("How this strategy works", description), BorderLayout.CENTER);
+        stack.add(Ui.section("Actions", actions), BorderLayout.SOUTH);
+        JPanel left = new JPanel(new BorderLayout());
+        left.add(stack, BorderLayout.NORTH);
         left.setPreferredSize(new Dimension(430, 10));
 
         // Step 4: results of the last run, one line per train with the reason.
@@ -122,12 +127,13 @@ public class AllocationPanel extends RefreshablePanel {
         results.setLineWrap(true);
         results.setWrapStyleWord(true);
         results.setFont(Ui.monoFont());
+        results.setMargin(new Insets(8, 10, 8, 10));
         JScrollPane resultsScroll = new JScrollPane(results);
-        resultsScroll.setBorder(BorderFactory.createTitledBorder("Results of the last allocation (in decision order)"));
 
-        add(Ui.heading("Automatic Allocation"), BorderLayout.NORTH);
+        add(Ui.header("Allocation",
+                "Choose a scheduling strategy and place the waiting trains on platforms."), BorderLayout.NORTH);
         add(left, BorderLayout.WEST);
-        add(resultsScroll, BorderLayout.CENTER);
+        add(Ui.section("Results of the last allocation, in decision order", resultsScroll), BorderLayout.CENTER);
         refresh();
     }
 

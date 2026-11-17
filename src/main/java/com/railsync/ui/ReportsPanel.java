@@ -45,7 +45,8 @@ public class ReportsPanel extends RefreshablePanel {
         JPanel tools = new JPanel(new FlowLayout(FlowLayout.LEFT));
         tools.add(copy);
         JPanel north = new JPanel(new BorderLayout());
-        north.add(Ui.heading("Reports"), BorderLayout.NORTH);
+        north.add(Ui.header("Reports",
+                "The full text report of the live schedule, ready to copy."), BorderLayout.NORTH);
         north.add(tools, BorderLayout.CENTER);
         add(north, BorderLayout.NORTH);
         add(new JScrollPane(text), BorderLayout.CENTER);
