@@ -231,3 +231,30 @@ A calm, classic look with no new features and no behaviour changes:
 - Font sizes use FlatLaf's own text styles, because custom half-point sizes were clipped under Windows display scaling.
 
 Verified: 165 tests pass; the app was captured in light and dark mode (`docs/screenshots/final-*`, `dark-*`).
+
+## Stage 9: SQLite storage and audit log (done)
+
+| Decision | Why |
+|---|---|
+| Embedded SQLite through JDBC (`org.xerial:sqlite-jdbc`) | Real SQL with transactions and constraints, nothing to install, one file to back up. |
+| `StationSnapshot` between the service and the storage | The service does not know how it is stored; the storage does not reach into the service. |
+| Save the whole session after every change, in one transaction | Simple and obviously correct; 500 trains save in about 0.3 s; a failure keeps the previous save. |
+| `AutoSaver` as an observer | No change to the scheduling code (Open/Closed). |
+| Restore re-checks every booking through `Schedule.reserve()` | Damaged or hand-edited data cannot produce an impossible plan. |
+| Versioned schema (`PRAGMA user_version`) | Older files are upgraded step by step; newer files are refused, not damaged. |
+| Append-only audit log | Every change traceable afterwards. |
+
+Verification: 14 persistence tests (round trip, given-up trains, restart from a file, failed save rolls back,
+clashing data refused, SQL-injection text stored as text, CHECK constraints, newer schema refused, unknown
+strategy, audit log, auto-saver, failing database); all earlier tests still pass.
+
+## Stage 10: interface redesign, system testing and software engineering documents (done)
+
+| Item | Result |
+|---|---|
+| Interface | Navy sidebar with icons and logo, cards, dashboard tiles, colour-coded event log, status badges, save indicator, live light/dark switch; window fits the screen |
+| Defects found and fixed | Dark mode switch left light colours (theme values now look-and-feel resources); refused database file stayed locked; window taller than a 864 px screen |
+| New tests | 10 system tests on the real window and database, 1 performance test, 34 boundary-value cases |
+| Coverage | JaCoCo: logic packages 95.9% of lines, whole program 77% |
+| Documents | `docs/se/`: SRS, requirement analysis, architecture, test plan, QA, project plan, maintenance, contributions; 9 new UML diagrams |
+| Total | 224 automated tests, all passing |

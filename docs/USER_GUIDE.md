@@ -1,26 +1,48 @@
 # RailSync User Guide
 
-Start the app with `run-app.cmd` (or `java -jar target\railsync-1.0.0.jar` after a build). The window has a
-toolbar at the top, the screens on the left (grouped as Overview, Data, Planning, Visualise and Analysis), and a
-status bar at the bottom. The status bar shows the latest event, with a green dot for routine events and a red dot
-for conflicts and breakdowns, plus the current strategy, buffer and maximum wait. Every screen starts with a title
-and one line saying what it is for, and the main action on a screen is the blue button.
+Start the app with `run-app.cmd` (or `java -jar target\railsync-1.1.0.jar` after a build).
+
+The window has three parts:
+
+- **Sidebar** (dark, on the left): the RailSync logo and the ten screens grouped as Overview, Data, Planning,
+  Visualise and Analysis; the selected screen is marked with an amber bar. At the bottom it shows where the data is
+  saved and when (**SQLite · railsync.db, Saved 10:42:07**) and the **Dark mode / Light mode** switch.
+- **Action bar** (top): the station name and service day, then Undo, Open CSV, Save CSV and **Load demo scenario**.
+- **Status bar** (bottom): the latest event (red dot for conflicts and breakdowns, green otherwise) and the current
+  strategy, buffer and maximum wait.
+
+Every screen starts with a title and one line saying what it is for; content sits on white cards, and the main
+action is the blue button. Types and statuses are shown as coloured labels (blue express, green passenger, amber
+freight; green allocated, red unallocated or failed).
 
 All times are on one simulated service day (16 Nov 2026) and are typed as `HH:mm`, e.g. `08:15`.
 
-## Toolbar
+## Saving: automatic
+
+There is no Save button for your work. **Every change is saved at once** to an SQLite database file:
+`%USERPROFILE%\.railsync\railsync.db` on Windows (`~/.railsync/railsync.db` on macOS and Linux). When you start
+RailSync again, everything comes back: platforms, trains, delays, bookings, failed platforms, the chosen strategy
+and the settings. On the very first start the demo scenario is loaded.
+
+- If the file cannot be used, RailSync tells you and works without saving for that session.
+- To start from scratch, close RailSync and delete (or rename) the file.
+- To keep several plans, start RailSync with another file:
+  `java -Drailsync.db=D:\plans\station2.db -jar target\railsync-1.1.0.jar`.
+- CSV files (below) are for exchanging scenarios with others; they hold trains and platforms but not bookings.
+
+## Action bar
 
 | Control | What it does |
 |---|---|
 | **Undo ...** (Ctrl+Z) | Takes back the last allocation or delay, including every train it moved. The label says what will be undone. Undo history is cleared by changes it cannot safely reverse (adding or editing data, a breakdown, changing the buffer). |
-| **Open CSV...** | Loads platforms and trains from a RailSync CSV file. The whole file is checked first; an error names the bad line and nothing changes. You are asked before the current data is replaced. |
-| **Save CSV...** | Saves the current platforms and trains (with delays and failed platforms, but not bookings). |
-| **Load demo scenario** | Restores the 6-platform, 12-train demo (nothing allocated). |
-| **Dark mode** | Switches between the light and dark themes. |
+| **Open CSV** | Loads platforms and trains from a RailSync CSV file. The whole file is checked first; an error names the bad line and nothing changes. You are asked before the current data is replaced. |
+| **Save CSV** | Exports the current platforms and trains (with delays and failed platforms, but not bookings). |
+| **Load demo scenario** | Restores the 6-platform, 12-train demo (nothing allocated), after asking. |
+| **Dark mode** (sidebar) | Switches between the light and dark themes at any time. |
 
 ## Dashboard
 
-Headline numbers (trains, allocated, unallocated, delayed, conflicts, working platforms, average waiting and
+Ten tiles with the headline numbers (trains, allocated, unallocated, delayed, conflicts, working platforms, average waiting and
 turnaround, average utilization, platforms needed for zero wait), the current strategy, a short demo guide, and
 the **event log**, which lists every event the screen received (the Observer pattern made visible).
 
@@ -104,8 +126,12 @@ running you can watch the queue being served in a new order.
 
 ## Reports
 
-Full text report: metrics with definitions, utilization per platform, a text Gantt chart and the last allocation
-log. **Copy report** puts it on the clipboard.
+Two tabs:
+
+- **Schedule report**: metrics with definitions, utilization per platform, a text Gantt chart and the last
+  allocation log. **Copy report** puts it on the clipboard.
+- **Audit log (database)**: every change ever made, newest first: number, date and time, event type (coloured) and
+  what happened. Entries are only ever added, never changed, so you can always check what was done and when.
 
 ## CSV file format
 

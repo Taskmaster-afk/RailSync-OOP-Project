@@ -30,7 +30,10 @@ flowchart LR
         UC12([Load demo scenario])
         UC13([Explain why a train has no platform])
         UC14([Resolve ripple / reassign trains])
+        UC15([View audit log])
+        UC16([Save session automatically])
     end
+    DB[("SQLite database (secondary actor)")]
 
     Controller --- UC1
     Controller --- UC2
@@ -48,11 +51,20 @@ flowchart LR
     UC3 -. includes .-> UC13
     UC4 -. includes .-> UC14
     UC5 -. includes .-> UC14
+    Examiner --- UC15
+    Controller --- UC15
+    UC1 -. includes .-> UC16
+    UC3 -. includes .-> UC16
+    UC4 -. includes .-> UC16
+    UC16 --- DB
+    UC15 --- DB
 ```
 
 **In words:** the controller manages trains and platforms, allocates, delays trains and reports breakdowns.
 Allocation always *includes* explaining refusals; delays and breakdowns *include* the shared reassignment logic.
 The examiner (or student) mainly loads the demo, compares strategies and reads the reports and diagrams.
+Every change *includes* saving the session automatically; the SQLite database is a secondary actor that stores
+the session and the audit log.
 
 ---
 
@@ -414,3 +426,310 @@ flowchart TD
 train takes the lowest-numbered free compatible platform (the half-open interval plus buffer must be free). If
 nothing is free it may preempt (only safely), or it waits, and once the earliest possible slot is beyond the
 maximum wait it is refused with the reason.
+
+---
+
+## 6. State diagram: train status (`TrainStatus`)
+
+```mermaid
+stateDiagram-v2
+    [*] --> SCHEDULED : created
+    SCHEDULED --> ALLOCATED : Schedule.reserve()
+    SCHEDULED --> UNALLOCATED : allocator gives up (no compatible platform, or wait over max)
+    ALLOCATED --> SCHEDULED : Schedule.release() (reset, undo, train edited)
+    ALLOCATED --> ALLOCATED : delay kept, moved or rippled
+    ALLOCATED --> UNALLOCATED : delay or breakdown with no safe option
+    UNALLOCATED --> SCHEDULED : markScheduled() (reset, re-plan, undo)
+    UNALLOCATED --> ALLOCATED : allocated again successfully
+    SCHEDULED --> [*] : removed (only without a platform)
+    UNALLOCATED --> [*] : removed
+```
+
+**In words:** a new train is SCHEDULED. Only `Schedule.reserve()` can make it ALLOCATED (the link method is
+package-private), and only `release()` takes that away, so the status and the booking can never disagree. A
+train the allocator or the delay manager cannot place safely becomes UNALLOCATED, always with a reason, and
+returns to SCHEDULED when the plan is reset. A train holding a platform cannot be removed.
+
+## 7. State diagram: a train moving through the station (`TrainMovement.Phase`)
+
+```mermaid
+stateDiagram-v2
+    [*] --> NOT_YET_ARRIVED
+    NOT_YET_ARRIVED --> HOLDING_AT_OUTER_SIGNAL : expected arrival, platform not free yet
+    NOT_YET_ARRIVED --> APPROACHING : expected arrival, platform free
+    HOLDING_AT_OUTER_SIGNAL --> APPROACHING : 4 min before the booking starts
+    APPROACHING --> AT_PLATFORM : booking start
+    AT_PLATFORM --> DEPARTING : booking end
+    DEPARTING --> GONE : 3 min later
+    GONE --> [*]
+```
+
+**In words:** this is the behaviour the time-distance diagram and the yard view draw at the simulated time.
+Each phase is a half-open interval, so at any minute a train is in exactly one phase. Holding at the outer
+signal is the visible ready queue.
+
+## 8. State diagram: platform (`PlatformStatus`)
+
+```mermaid
+stateDiagram-v2
+    [*] --> OPERATIONAL : created
+    OPERATIONAL --> FAILED : breakdown reported (bookings moved or reported)
+    FAILED --> OPERATIONAL : repaired
+    OPERATIONAL --> [*] : removed (only with no bookings)
+    FAILED --> [*] : removed (only with no bookings)
+```
+
+---
+
+## 9. Component diagram
+
+```mermaid
+flowchart TB
+    subgraph Presentation["Presentation layer: ui"]
+        MF["MainFrame and 10 screens"]
+        DG["TimeDistanceDiagram, YardView"]
+        TH["Theme, Card, BadgeRenderer"]
+    end
+    subgraph Application["Application layer: service"]
+        SS[["SchedulingService (facade)"]]
+        AL[PlatformAllocator]
+        DM[DelayManager]
+        MC["MetricsCalculator, ReportGenerator"]
+        AR["StrategyArena, ScenarioGenerator"]
+        CMD["Undo commands"]
+        CSV[ScenarioCsv]
+    end
+    subgraph Policies["Policies: strategy"]
+        ST["PlatformAllocationStrategy: FCFS, Priority, SJF, Aging"]
+    end
+    subgraph Domain["Domain layer: model"]
+        MD["Train hierarchy, Platform, Station, Schedule, PlatformReservation"]
+    end
+    subgraph Events["Events: observer"]
+        EV[ScheduleEventManager]
+    end
+    subgraph Persistence["Persistence layer: persistence"]
+        AS[AutoSaver]
+        RP["StationRepository and AuditLog (interfaces)"]
+        SQ["SqliteStationRepository, SqliteAuditLog, DAOs"]
+        DBC[Database]
+    end
+    SQLITE[("SQLite file railsync.db")]
+    FILES[/"Scenario CSV files"/]
+
+    MF --> SS
+    DG --> SS
+    SS --> AL
+    SS --> DM
+    SS --> MC
+    SS --> CMD
+    SS --> AR
+    AL --> ST
+    AL --> MD
+    DM --> MD
+    SS --> EV
+    EV -. notifies .-> MF
+    EV -. notifies .-> AS
+    AS --> RP
+    RP --> SQ
+    SQ --> DBC
+    DBC --> SQLITE
+    MF --> CSV
+    CSV --> FILES
+```
+
+**In words:** the screens only talk to the `SchedulingService` facade. The services use the strategy interface
+and the domain model. Every change is published as an event; the screens and the `AutoSaver` both listen. The
+auto-saver writes through the two repository interfaces, so only the `persistence` package knows about SQLite.
+
+## 10. Package diagram (dependencies point downward only)
+
+```mermaid
+flowchart TB
+    ROOT["com.railsync: Main (composition root)"]
+    UI[ui]
+    PERSIST[persistence]
+    SERVICE[service]
+    STRATEGY[strategy]
+    OBSERVER[observer]
+    MODEL[model]
+    EXC[exception]
+    ROOT --> UI
+    ROOT --> PERSIST
+    ROOT --> SERVICE
+    UI --> SERVICE
+    UI --> PERSIST
+    PERSIST --> SERVICE
+    PERSIST --> OBSERVER
+    SERVICE --> STRATEGY
+    SERVICE --> OBSERVER
+    SERVICE --> MODEL
+    STRATEGY --> MODEL
+    OBSERVER --> MODEL
+    MODEL --> EXC
+```
+
+`ui` depends on `persistence` only for the `AuditLog` interface (Reports screen) and the `AutoSaver` save
+indicator. No package below `ui` imports Swing, and nothing outside `persistence` imports `java.sql`.
+
+## 11. Deployment diagram
+
+```mermaid
+flowchart LR
+    subgraph PC["User's PC: Windows, macOS or Linux"]
+        subgraph JVM["Java 21+ runtime"]
+            JAR["railsync-1.1.0.jar"]
+            LIB["lib/: flatlaf, flatlaf-extras, jsvg, sqlite-jdbc (with native SQLite)"]
+        end
+        DBF[("~/.railsync/railsync.db")]
+        CSVF[/"scenario .csv files"/]
+    end
+    JAR --> LIB
+    JAR -- "JDBC, embedded, no server" --> DBF
+    JAR -- "read and write" --> CSVF
+```
+
+**In words:** RailSync is a single desktop process. There is no server and no network: SQLite runs inside the
+same process through the JDBC driver and stores everything in one file in the user's home folder (the location
+can be changed with `-Drailsync.db=path`).
+
+## 12. Entity-relationship diagram (database schema, version 1)
+
+```mermaid
+erDiagram
+    PLATFORMS ||--o{ BOOKINGS : hosts
+    TRAINS ||--o| BOOKINGS : "has at most one"
+    PLATFORMS {
+        TEXT id PK
+        INTEGER number UK
+        INTEGER length_m
+        TEXT train_types
+        TEXT status
+    }
+    TRAINS {
+        TEXT id PK
+        TEXT number UK
+        TEXT name
+        TEXT type
+        TEXT arrival
+        TEXT departure
+        INTEGER base_priority
+        INTEGER carriages
+        INTEGER delay_min
+        INTEGER given_up
+    }
+    BOOKINGS {
+        TEXT train_id PK
+        TEXT platform_id FK
+        TEXT start_time
+    }
+    SETTINGS {
+        TEXT key PK
+        TEXT value
+    }
+    AUDIT_LOG {
+        INTEGER id PK
+        TEXT logged_at
+        TEXT event_type
+        TEXT message
+    }
+```
+
+**In words:** a booking belongs to exactly one train (the train id is its primary key and a foreign key with
+`ON DELETE CASCADE`, so the database itself refuses a second booking for a train) and one platform. CHECK
+constraints guard the values (number and length above 0, priority 1 to 5, delay at least 0, status and type from
+a fixed list). `SETTINGS` is a key/value table, so new settings need no schema change. `AUDIT_LOG` is
+append-only. The schema version is kept in `PRAGMA user_version`.
+
+## 13. Class diagram: persistence layer
+
+```mermaid
+classDiagram
+    direction LR
+    class StationRepository {
+        <<interface>>
+        +save(StationSnapshot)
+        +load() Optional
+    }
+    class AuditLog {
+        <<interface>>
+        +record(String, String)
+        +recent(int) List
+        +count() int
+    }
+    class ScheduleObserver {
+        <<interface>>
+        +onScheduleEvent(ScheduleEvent)
+    }
+    class SqliteStationRepository {
+        -Database database
+        +save(StationSnapshot)
+        +load() Optional
+    }
+    class SqliteAuditLog {
+        -Database database
+    }
+    class Database {
+        +SCHEMA_VERSION int
+        -Connection connection
+        +open(Path) Database
+        +inMemory() Database
+        -migrate()
+        +close()
+    }
+    class AutoSaver {
+        -SchedulingService service
+        +onScheduleEvent(ScheduleEvent)
+        +saveNow()
+        +addSaveListener(SaveListener)
+    }
+    class StationSnapshot {
+        +getPlatforms() List
+        +getTrains() List
+        +getBookings() List
+        +getSettings() Settings
+    }
+    StationRepository <|.. SqliteStationRepository
+    AuditLog <|.. SqliteAuditLog
+    ScheduleObserver <|.. AutoSaver
+    SqliteStationRepository *-- PlatformDao
+    SqliteStationRepository *-- TrainDao
+    SqliteStationRepository *-- BookingDao
+    SqliteStationRepository *-- SettingsDao
+    SqliteStationRepository --> Database
+    SqliteAuditLog --> Database
+    AutoSaver --> StationRepository
+    AutoSaver --> AuditLog
+    AutoSaver ..> StationSnapshot : saves
+    SqliteStationRepository ..> StationSnapshot : builds
+```
+
+## 14. Sequence diagram: a change is saved automatically
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Screen as AllocationPanel
+    participant Service as SchedulingService
+    participant Events as ScheduleEventManager
+    participant Panels as Other screens
+    participant Saver as AutoSaver
+    participant Repo as SqliteStationRepository
+    participant DB as SQLite
+
+    User->>Screen: click "Allocate all pending trains"
+    Screen->>Service: allocatePendingTrains()
+    Service->>Service: allocate with the current strategy
+    Service->>Events: publish(ALLOCATION)
+    Events->>Panels: onScheduleEvent(), each refreshes
+    Events->>Saver: onScheduleEvent()
+    Saver->>DB: INSERT INTO audit_log
+    Saver->>Service: takeSnapshot()
+    Saver->>Repo: save(snapshot)
+    Repo->>DB: BEGIN, DELETE old rows, INSERT new rows, COMMIT
+    Saver-->>Screen: SaveListener: "Saved 10:42:07" in the sidebar
+```
+
+**In words:** the service does not know that it is being saved. It publishes the same event it always did; the
+auto-saver, as one more observer, writes the audit entry and the whole session in one transaction. If the
+database fails, the change still succeeds in memory and the sidebar shows "Save failed".

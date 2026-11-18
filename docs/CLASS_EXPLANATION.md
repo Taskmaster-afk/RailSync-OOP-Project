@@ -1,6 +1,7 @@
 # Class-by-Class Explanation
 
-Packages, in the order to read them: `exception` -> `model` -> `strategy` -> `observer` -> `service` -> `ui`.
+Packages, in the order to read them: `exception` -> `model` -> `strategy` -> `observer` -> `service` ->
+`persistence` -> `ui`.
 Every class also has a header comment in the source with the same information.
 
 ---
@@ -185,16 +186,41 @@ Every class also has a header comment in the source with the same information.
 | `AllocateCommand` / `DelayCommand` | Wrap allocation / delay; DelayCommand also removes the delay minutes on undo. |
 | `CommandHistory` | Stack of up to 20 commands. |
 
+### Saving and restoring
+| Class | Purpose |
+|---|---|
+| `StationSnapshot` | Immutable picture of the whole session (platforms, trains, bookings by id, given-up trains, settings). The contract between the service and the storage. |
+| `SchedulingService.takeSnapshot()` / `restore()` | Build a snapshot of the live session / replace the live session with a saved one, re-checking every booking through `Schedule.reserve()`. |
+
+---
+
+## Package `persistence` (SQLite; no scheduling rules)
+
+| Class | Purpose | Key methods |
+|---|---|---|
+| `Database` | Opens the SQLite file (or an in-memory database for tests), switches on foreign keys, creates and upgrades the schema (version in `PRAGMA user_version`), runs work in one transaction. | `open(Path)`, `inMemory()`, `defaultFile()`, `migrate()`, `inTransaction()`, `close()` |
+| `StationRepository` (interface) | Save and load the whole session. Callers depend on this, not on SQLite (SOLID-D, Repository pattern). | `save(snapshot)`, `load()` |
+| `SqliteStationRepository` | SQLite implementation: replaces every table in one transaction; rebuilds the objects on load. Owns one DAO per table (composition). | `save`, `load` |
+| `PlatformDao`, `TrainDao`, `BookingDao`, `SettingsDao` | One table each; all values passed as `PreparedStatement` parameters. `TrainDao` rebuilds the right subclass through `TrainFactory`. | `insertAll`, `findAll`, `deleteAll` / `saveAll` |
+| `AuditLog` (interface) | Append-only record of every change. | `record(type, message)`, `recent(limit)`, `count()` |
+| `SqliteAuditLog` | SQLite implementation; messages limited to 2,000 characters; no update or delete. | as above |
+| `AuditEntry` | One immutable audit line (id, time, type, message). | getters |
+| `AutoSaver` | A `ScheduleObserver`: after every event it writes the audit entry and saves the snapshot; tells `SaveListener`s (the sidebar) whether it worked. A failure is reported, never thrown at the screen. | `onScheduleEvent`, `saveNow`, `addSaveListener` |
+
+`Main.build(Database)` (in `com.railsync`) is the composition root: it creates the service, the repositories,
+the auto-saver and the window, restores the last session (or loads the demo), then subscribes the auto-saver.
+The system tests call it with a temporary database file.
+
 ---
 
 ## Package `ui` (Swing; no business rules)
 
 | Class | Shows / does | Calls | Observes |
 |---|---|---|---|
-| `Main` (in `com.railsync`) | Wires the objects together, opens the window | constructors | - |
-| `MainFrame` | Toolbar (Undo, CSV, demo, theme), sidebar, card area, status bar; owns the `SimulationClock` | `SchedulingService`, `ScenarioCsv` | events (Undo button) |
+| `Main` (in `com.railsync`) | Opens the database, wires the objects together (`build`), opens the window | constructors, `Database` | - |
+| `MainFrame` | Navy sidebar (logo, screens, save indicator, theme switch), action bar (Undo, CSV, demo), card area, status bar; owns the `SimulationClock`; fits the window to the screen | `SchedulingService`, `ScenarioCsv` | events (Undo button), `AutoSaver` (save indicator) |
 | `RefreshablePanel` | Abstract base of every screen: subscribe + `refresh()` | - | all events |
-| `DashboardPanel` | Number cards, strategy, guide, live event log | `calculateMetrics` | all events |
+| `DashboardPanel` | Ten number tiles with icons, strategy card and guide, colour-coded live event log | `calculateMetrics` | all events |
 | `TrainPanel` (+ `TrainTableModel`, `TrainFormDialog`) | Train table, search, add/edit/remove/release/view | service train methods, `TrainFactory` | all events |
 | `PlatformPanel` (+ `PlatformTableModel`, `PlatformFormDialog`) | Platform table, add/edit/remove/repair, compatibility check | service platform methods | all events |
 | `AllocationPanel` | Strategy and settings, allocate all/one, reset, results | service allocation and settings | all events |
@@ -204,11 +230,13 @@ Every class also has a header comment in the source with the same information.
 | `DisruptionPanel` | Delay / breakdown / scripted demo, report, own diagram | `delayTrain`, `reportBreakdown` | events |
 | `YardPanel` / `YardView` | Top-down yard, ready queue, switch strategy from now | `setStrategy`, `reallocateFrom` | events, clock |
 | `ComparisonPanel` | Arena table, seed and train count, load generated | `StrategyArena`, `ScenarioGenerator` | - (on demand) |
-| `ReportsPanel` | Full text report | `ReportGenerator` | all events |
+| `ReportsPanel` | Tabs: full text report, and the database audit log | `ReportGenerator`, `AuditLog` | all events |
 | `StatusBar` | Last event and current settings | read only | all events |
-| `Theme` | The look: one accent colour, rounded corners, slim scrollbars, airy tables; light or dark mode | FlatLaf | - |
+| `Theme` | The visual system: navy, steel-blue and amber palette, page and card colours, rounded corners, tables, icons (`icon()`); light or dark mode, switchable while open (values stored as look-and-feel resources) | FlatLaf | - |
+| `Card` | Rounded surface used for every section and tile; makes its content blend in and left-aligns table headers | - | - |
+| `BadgeRenderer` | Shows types, statuses and event types as coloured pills in tables | - | - |
 | `SimulationClock` | Simulated time via a Swing Timer (100 ms ticks, 1x/10x/60x) | - | - |
 | `ClockControls` | Play/Pause, speed, jump to start (shared by two screens) | clock | clock |
-| `StrategyListRenderer`, `Ui` | Strategy names in drop-downs; time format/parse, colours, dialogs | - | - |
+| `StrategyListRenderer`, `Ui` | Strategy names in drop-downs; time format/parse, colours, headers, cards, badges, dialogs | - | - |
 
 `ConsoleDemo` (in `com.railsync`) prints the behaviour of stages 1-4 without the GUI.

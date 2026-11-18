@@ -66,8 +66,18 @@ const PAGES = [
   { id: "patterns", title: "Design patterns", file: "DESIGN_PATTERNS.md" },
   { id: "uml", title: "UML diagrams", file: "UML_DIAGRAMS.md" },
   { id: "classes", title: "Class explanation", file: "CLASS_EXPLANATION.md" },
+  { group: "Software engineering" },
+  { id: "srs", title: "Requirements (SRS)", file: "se/SRS.md" },
+  { id: "analysis", title: "Requirement analysis", file: "se/REQUIREMENTS_ANALYSIS.md" },
+  { id: "architecture", title: "Architecture & design", file: "se/ARCHITECTURE.md" },
+  { id: "testplan", title: "Test plan & report", file: "se/TEST_PLAN.md" },
+  { id: "qa", title: "Quality assurance", file: "se/QUALITY_ASSURANCE.md" },
+  { id: "plan", title: "Project plan", file: "se/PROJECT_PLAN.md" },
+  { id: "maintenance", title: "Maintenance plan", file: "se/MAINTENANCE.md" },
+  { id: "contributions", title: "Team contributions", file: "se/CONTRIBUTIONS.md" },
   { group: "Project" },
   { id: "progress", title: "Build log & decisions", file: "PROGRESS.md" },
+  { id: "changelog", title: "Changelog", file: "../CHANGELOG.md" },
 ];
 
 const SCREENSHOTS = [
@@ -82,10 +92,12 @@ const SCREENSHOTS = [
   ["final-breakdown-after.png", "PF-2 breakdown: S-201 moved, others stranded"],
   ["final-yard-view.png", "Top-down yard view with the ready queue"],
   ["final-comparison.png", "Strategy comparison arena"],
-  ["final-reports.png", "Text report and metrics"],
+  ["final-reports.png", "Reports: text report and the database audit log"],
   ["dark-dashboard.png", "Dark mode: dashboard"],
   ["dark-delay-after.png", "Dark mode: delay ripple"],
   ["dark-yard-view.png", "Dark mode: yard view"],
+  ["dark-trains.png", "Dark mode: trains with status badges"],
+  ["dark-allocation.png", "Dark mode: allocation"],
 ];
 
 const nav = document.getElementById("nav");

@@ -112,6 +112,8 @@ The `TrainTest.polymorphicListDispatchesToRealSubclass` test shows this with a `
 | **Aggregation** `[AGGREGATION]` | `Station.platforms` (`model/Station.java:34`) | A station *holds* platforms that are created outside and passed in (`addPlatform`). Removing one from the station does not destroy it (test `removedPlatformStillExists`). The arena puts copied platforms into a different station. |
 | **Composition** `[COMPOSITION]` | `Schedule.reservations` (`model/Schedule.java:53`) | Schedule **creates** (`:116`, via the package-private constructor at `PlatformReservation.java:37`) and **destroys** (`release()`, `:277`) its reservations. No other class can create one; a reservation has no meaning without its schedule. |
 | Composition (service level) | `SchedulingService` constructor (`:69`) | The service creates and owns its TrainManager, PlatformManager, PlatformAllocator, DelayManager. |
+| Composition (persistence) | `SqliteStationRepository` | The repository creates and owns one DAO per table; they exist only inside it. |
+| Association (persistence) | `AutoSaver` → `StationRepository`, `AuditLog` | The auto-saver uses repositories it is given; it does not own or create them. |
 
 ## 7. Interfaces vs abstract classes
 
@@ -119,7 +121,7 @@ The `TrainTest.polymorphicListDispatchesToRealSubclass` test shows this with a `
 |---|---|---|
 | Holds | Method contracts only | Shared fields and code, plus abstract methods |
 | A class can have | Many | One parent |
-| RailSync examples | `PlatformAllocationStrategy`, `ScheduleObserver`, `ScheduleCommand`, `SimulationClock.Listener` | `Train`, `QueueOrderingStrategy`, `SnapshotCommand`, `RefreshablePanel` |
+| RailSync examples | `PlatformAllocationStrategy`, `ScheduleObserver`, `ScheduleCommand`, `SimulationClock.Listener`, `StationRepository`, `AuditLog` | `Train`, `QueueOrderingStrategy`, `SnapshotCommand`, `RefreshablePanel` |
 
 RailSync uses them together on purpose. `PlatformAllocationStrategy` says *what* a strategy does (any class may be
 one). `QueueOrderingStrategy implements` it and adds the *shared how* (copy, sort, tie-break), so the four concrete
@@ -174,3 +176,18 @@ strategies each write one comparison. The same pairing appears in `ScheduleComma
 - Console: `run-demo.cmd` prints polymorphism tables, composition, observer events and more.
 - Tests: `TrainTest` (inheritance and polymorphism), `ScheduleTest` and `OverlapTest` (composition and encapsulation),
   `StrategyOrderTest` (strategy), `ScheduleEventManagerTest` (observer), `CsvAndUndoTest` (command).
+
+## 13. Object-oriented design in the storage layer (SQLite)
+
+The `persistence` package applies the same principles:
+
+- **Abstraction / SOLID-D:** the rest of the program depends on the interfaces `StationRepository` and `AuditLog`;
+  only `Main.build()` names the SQLite classes.
+- **Polymorphism:** `AutoSaver` calls `repository.save(...)` and `auditLog.record(...)` on interface references; the
+  SQLite versions run (a test or another database could supply different ones).
+- **Encapsulation:** the JDBC `Connection` is private to `Database`; DAOs are package-private, so no class outside
+  `persistence` can run SQL. `StationSnapshot` and `AuditEntry` are immutable.
+- **SOLID-S:** one DAO per table; `Database` only connects and migrates; the repository only coordinates.
+- **SOLID-O:** saving was added as one more observer, without changing the scheduling classes.
+- **Factory reuse:** `TrainDao` rebuilds each saved train through `TrainFactory`, so the right subclass (and its
+  behaviour) comes back.

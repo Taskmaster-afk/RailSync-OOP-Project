@@ -11,7 +11,7 @@
 
     <groupId>com.railsync</groupId>
     <artifactId>railsync</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
     <name>RailSync</name>
 
@@ -64,6 +64,27 @@
                     <reportFormat>plain</reportFormat>
                     <trimStackTrace>true</trimStackTrace>
                 </configuration>
+            </plugin>
+            <plugin>
+                <!-- Test coverage: "mvnw test" writes the report to target/site/jacoco/index.html. -->
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.16</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

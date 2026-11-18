@@ -125,3 +125,23 @@ Then do the 5-minute GUI tour in the README.
 - **Sweep-line minimum ignores categories and lengths**, so it is a yardstick, not an achievable target.
 - **CSV stores the scenario, not bookings**; undo covers allocations and delays only.
 - **Educational simulation only**: not a real signalling or safety system.
+
+## 5. Questions about the database and software engineering
+
+28. *Why SQLite and not MySQL or plain files?* SQLite is embedded: no server to install, one file, but still real
+    SQL with transactions, constraints and foreign keys. Plain files would need our own format and give no
+    transactions; a server database would make the app hard to run on an examiner's laptop.
+29. *How is the data saved?* `AutoSaver` is an observer. After every event it writes an audit entry and saves the
+    whole session (`StationSnapshot`) in one transaction through `StationRepository`.
+30. *What if the save fails half-way?* The transaction is rolled back, so the previous save stays complete; the
+    change still exists in memory and the sidebar shows "Save failed".
+31. *How do you stop SQL injection?* Every value is a `PreparedStatement` parameter; a test stores the name
+    `Robert'); DROP TABLE trains; --` and reads it back as plain text.
+32. *What is the Repository pattern here?* `StationRepository` and `AuditLog` say *what* is stored; the SQLite
+    classes say *how*. Only `Main.build()` names SQLite (dependency inversion).
+33. *How would you change the database schema?* Raise `Database.SCHEMA_VERSION` and add a step in `migrate()`;
+    old files are upgraded automatically (`PRAGMA user_version`).
+34. *What test levels do you have?* Unit (including boundary values), integration, system (the real window and
+    database, `SystemTest`) and performance; 224 tests in total, all passing; 95.9% line coverage of the logic.
+35. *Show a state diagram.* Train status: SCHEDULED → ALLOCATED via `Schedule.reserve()`; back via `release()`;
+    UNALLOCATED when no safe option exists (see UML_DIAGRAMS.md, sections 6 to 8).

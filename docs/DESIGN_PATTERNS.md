@@ -1,7 +1,8 @@
 # Design Patterns in RailSync
 
-Four patterns are used: **Strategy** and **Observer** (required), **Factory** and **Command** (optional, added
-because they solve a real problem). No other patterns are claimed. One method, `QueueOrderingStrategy.orderReadyQueue`,
+Six patterns are used: **Strategy** and **Observer** (required), **Factory** and **Command** (optional, added
+because they solve a real problem), and, with the SQLite storage, **Repository** and **Data Access Object**.
+`SchedulingService` also plays the role of a **Facade** for the interface layer. No other patterns are claimed. One method, `QueueOrderingStrategy.orderReadyQueue`,
 follows the *Template Method idea* (a fixed algorithm with one overridable step); it is mentioned below but not
 counted as a separate pattern.
 
@@ -176,3 +177,56 @@ protected void reverseOwnChange() {
 **Why chosen:** each undoable action is an object that knows how to reverse itself. Undo restores a snapshot taken
 just before `execute()`, which handles ripples and preemption in one step, and `Schedule.reserve()` re-checks every
 rule on the way back. History is cleared after changes that a snapshot could not safely reverse.
+
+---
+
+## 5. Repository and Data Access Object (SQLite storage)
+
+**Problem:** the session must be saved in a database, but the scheduling services and the screens should not
+contain SQL, and the storage should be replaceable (another database, or a fake in tests).
+
+**Roles in RailSync:**
+
+| Role | Class |
+|---|---|
+| Repository interfaces (what is stored, not how) | `persistence/StationRepository` (`save`, `load`), `persistence/AuditLog` (`record`, `recent`, `count`) |
+| Repository implementations | `SqliteStationRepository`, `SqliteAuditLog` |
+| Data Access Objects (one table each) | `PlatformDao`, `TrainDao`, `BookingDao`, `SettingsDao` |
+| Data transfer object | `service/StationSnapshot` (the whole session as plain data) |
+
+**Code (the repository coordinates the DAOs in one transaction), `persistence/SqliteStationRepository.java`:**
+
+```java
+database.inTransaction(connection -> {
+    bookingDao.deleteAll(connection);
+    trainDao.deleteAll(connection);
+    platformDao.deleteAll(connection);
+    platformDao.insertAll(connection, snapshot.getPlatforms());
+    trainDao.insertAll(connection, snapshot.getTrains(), snapshot.getUnallocatedTrainIds());
+    bookingDao.insertAll(connection, snapshot.getBookings());
+    settingsDao.saveAll(connection, settingsToMap(snapshot.getSettings()));
+});
+```
+
+**Why chosen:** each DAO holds the SQL of one table (Single Responsibility); the repository interface is all the
+rest of the program sees (Dependency Inversion), so a PostgreSQL or cloud version would be one new class.
+
+**Observer reused for saving:** the `AutoSaver` is simply one more `ScheduleObserver`. Persistence was added
+without changing a single line of the scheduling logic (Open/Closed). Simplified (the real method also catches a
+failed save and reports it to the sidebar instead of throwing):
+
+```java
+@Override
+public void onScheduleEvent(ScheduleEvent event) {
+    auditLog.record(event.getType().name(), event.getMessage());
+    repository.save(service.takeSnapshot());
+}
+```
+
+## 6. Facade (role of `SchedulingService`)
+
+`SchedulingService` gives the screens one simple entry point (`allocatePendingTrains`, `delayTrain`,
+`reportBreakdown`, `undoLast`, ...) in front of `TrainManager`, `PlatformManager`, `PlatformAllocator`,
+`DelayManager`, `MetricsCalculator` and the command history. Screens never call those classes directly, so the
+subsystem can change without touching the interface layer.
+
