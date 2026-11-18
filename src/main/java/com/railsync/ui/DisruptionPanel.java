@@ -100,7 +100,7 @@ public class DisruptionPanel extends RefreshablePanel {
         left.setPreferredSize(new Dimension(420, 10));
 
         JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, left,
-                new JScrollPane(new TimeDistanceDiagram(service, clock)));
+                Ui.card(new JScrollPane(new TimeDistanceDiagram(service, clock))));
         split.setResizeWeight(0.0);
         add(Ui.header("Delay & Breakdown",
                 "Delay a train or take a platform out of service, and see exactly what moved and why."), BorderLayout.NORTH);

@@ -2,7 +2,7 @@
 <!--
   RailSync - Railway Platform Allocation and Scheduling Simulator.
   Build file: Java 21, JUnit 5 for tests,
-  plus FlatLaf for the Swing look and feel.
+  FlatLaf for the Swing look and feel, and SQLite for storage.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -22,11 +22,23 @@
     </properties>
 
     <dependencies>
-        <!-- Modern Swing look and feel with light/dark themes. The only runtime dependency. -->
+        <!-- Modern Swing look and feel with light/dark themes. -->
         <dependency>
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf</artifactId>
             <version>3.8</version>
+        </dependency>
+        <!-- FlatLaf's extras: SVG icons for the sidebar and toolbar. -->
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf-extras</artifactId>
+            <version>3.8</version>
+        </dependency>
+        <!-- SQLite database engine and JDBC driver (embedded: no server to install). -->
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>3.54.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -72,7 +84,7 @@
                 </configuration>
             </plugin>
             <plugin>
-                <!-- Copies FlatLaf next to the jar (target/lib) so "java -jar" works. -->
+                <!-- Copies the runtime libraries next to the jar (target/lib) so "java -jar" works. -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>3.8.1</version>

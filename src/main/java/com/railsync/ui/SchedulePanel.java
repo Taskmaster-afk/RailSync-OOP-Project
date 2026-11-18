@@ -43,6 +43,8 @@ public class SchedulePanel extends RefreshablePanel {
         super(service);
         model = new ReservationTableModel(service);
         JTable table = new JTable(model);
+        table.getColumnModel().getColumn(3).setCellRenderer(new BadgeRenderer());
+        table.getColumnModel().getColumn(3).setMinWidth(120);
 
         platformFilter.setRenderer(new PlatformRenderer());
         platformFilter.addActionListener(e -> {
@@ -65,7 +67,7 @@ public class SchedulePanel extends RefreshablePanel {
         north.add(Ui.header("Schedule",
                 "Every platform booking in time order, and the trains that are still without a platform."), BorderLayout.NORTH);
         north.add(tools, BorderLayout.CENTER);
-        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(table),
+        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, Ui.card(new JScrollPane(table)),
                 Ui.section("Trains without a platform", unallocatedScroll));
         split.setResizeWeight(0.75);
         add(north, BorderLayout.NORTH);

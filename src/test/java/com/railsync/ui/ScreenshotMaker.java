@@ -43,6 +43,8 @@ public final class ScreenshotMaker {
     public static void main(String[] args) throws Exception {
         String prefix = args.length > 0 ? args[0] : "screen";
         Theme.apply(args.length > 1 && args[1].equals("dark"));
+        // "switch": start light and change to dark while the window is open, exactly as the sidebar switch does.
+        boolean switchLater = args.length > 1 && args[1].equals("switch");
 
         // Step 1: build the window, load the demo, allocate with FCFS, capture every screen.
         SwingUtilities.invokeAndWait(() -> {
@@ -54,6 +56,10 @@ public final class ScreenshotMaker {
             // 08:12: three trains are queuing at the outer signal, so the yard view has something to show.
             frame.getClock().setTime(DemoScenarioLoader.SERVICE_DAY.atTime(8, 12));
             frame.setVisible(true);
+            if (switchLater) {
+                Theme.apply(true);
+                com.formdev.flatlaf.FlatLaf.updateUI();
+            }
         });
         for (String name : frame.getScreenNames()) {
             onEdt(() -> {
@@ -108,8 +114,13 @@ public final class ScreenshotMaker {
         frame.showScreen(screen);
         JRootPane root = frame.getRootPane();
         root.validate();
-        BufferedImage image = new BufferedImage(root.getWidth(), root.getHeight(), BufferedImage.TYPE_INT_RGB);
+        // Paint at the screen's own scale (e.g. 125 %), so text is measured and drawn exactly as on screen.
+        double scale = frame.getGraphicsConfiguration().getDefaultTransform().getScaleX();
+        BufferedImage image = new BufferedImage((int) Math.round(root.getWidth() * scale),
+                (int) Math.round(root.getHeight() * scale), BufferedImage.TYPE_INT_RGB);
         Graphics2D g = image.createGraphics();
+        g.setRenderingHint(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g.scale(scale, scale);
         root.paint(g);
         g.dispose();
         File folder = new File("docs/screenshots");

@@ -68,7 +68,7 @@ public class YardPanel extends RefreshablePanel {
         north.add(controls, BorderLayout.CENTER);
         north.add(strategyRow, BorderLayout.SOUTH);
         add(north, BorderLayout.NORTH);
-        add(new JScrollPane(yard), BorderLayout.CENTER);
+        add(Ui.card(new JScrollPane(yard)), BorderLayout.CENTER);
     }
 
     /** The yard redraws itself; nothing else to refresh. */

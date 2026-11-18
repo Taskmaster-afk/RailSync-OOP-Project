@@ -31,7 +31,7 @@ public class StatusBar extends JPanel implements ScheduleObserver {
     private final SchedulingService service;
     private final JLabel dot = new JLabel("●");
     private final JLabel lastEvent = new JLabel("Ready.");
-    private final JLabel settings = new JLabel();
+    private final JLabel settings = new Ui.MutedLabel("");
 
     /**
      * Creates the status bar and subscribes it to events.
@@ -44,7 +44,6 @@ public class StatusBar extends JPanel implements ScheduleObserver {
         // A thin line on top, then the message (with a coloured dot) on the left and the settings on the right.
         dot.setForeground(OK_COLOR);
         dot.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 6));
-        settings.setForeground(Theme.mutedText());
         JPanel message = new JPanel(new BorderLayout());
         message.add(dot, BorderLayout.WEST);
         message.add(lastEvent, BorderLayout.CENTER);

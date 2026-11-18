@@ -29,4 +29,15 @@ public class RailSyncException extends RuntimeException {
     public RailSyncException(String message) {
         super(message);
     }
+
+    /**
+     * Creates an exception that keeps the technical cause (for example a
+     * database error) behind a friendly message.
+     *
+     * @param message plain-English explanation of what went wrong
+     * @param cause   the underlying exception
+     */
+    public RailSyncException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

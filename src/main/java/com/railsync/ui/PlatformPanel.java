@@ -48,7 +48,8 @@ public class PlatformPanel extends RefreshablePanel {
         model = new PlatformTableModel(service);
         table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.getColumnModel().getColumn(3).setCellRenderer(new StatusRenderer());
+        table.getColumnModel().getColumn(3).setCellRenderer(new BadgeRenderer());
+        table.getColumnModel().getColumn(3).setMinWidth(120);
         table.getSelectionModel().addListSelectionListener(e -> showCompatibility());
 
         JButton add = Ui.primary(new JButton("Add platform"));
@@ -73,7 +74,7 @@ public class PlatformPanel extends RefreshablePanel {
         compatibility.setEditable(false);
         compatibility.setFont(Ui.monoFont());
         JScrollPane compatibilityScroll = new JScrollPane(compatibility);
-        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(table),
+        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, Ui.card(new JScrollPane(table)),
                 Ui.section("Compatibility of the selected platform", compatibilityScroll));
         split.setResizeWeight(0.5);
 
@@ -157,19 +158,5 @@ public class PlatformPanel extends RefreshablePanel {
             Ui.showInfo(this, "Select a platform in the table first.");
         }
         return platform;
-    }
-
-    /** Shows FAILED platforms in red. */
-    private static final class StatusRenderer extends DefaultTableCellRenderer {
-        /** Swing calls this for every cell; we only adjust its colour or font. */
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean selected,
-                                                       boolean focused, int row, int column) {
-            Component cell = super.getTableCellRendererComponent(table, value, selected, focused, row, column);
-            if (!selected) {
-                cell.setForeground(value == PlatformStatus.FAILED ? Ui.CONFLICT_COLOR : table.getForeground());
-            }
-            return cell;
-        }
     }
 }

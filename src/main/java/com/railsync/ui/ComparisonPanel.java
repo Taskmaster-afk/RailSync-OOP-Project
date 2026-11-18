@@ -112,7 +112,7 @@ public class ComparisonPanel extends JPanel {
                 "The same trains through every strategy, side by side. The live schedule is never changed."), BorderLayout.NORTH);
         north.add(source, BorderLayout.CENTER);
         add(north, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        add(Ui.card(new JScrollPane(table)), BorderLayout.CENTER);
         add(Ui.section("How to read this", notesScroll), BorderLayout.SOUTH);
     }
 

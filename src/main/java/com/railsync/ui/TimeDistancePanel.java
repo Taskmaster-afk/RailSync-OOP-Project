@@ -52,7 +52,7 @@ public class TimeDistancePanel extends RefreshablePanel {
         north.add(controls, BorderLayout.CENTER);
         north.add(legend, BorderLayout.SOUTH);
         add(north, BorderLayout.NORTH);
-        add(new JScrollPane(diagram), BorderLayout.CENTER);
+        add(Ui.card(new JScrollPane(diagram)), BorderLayout.CENTER);
     }
 
     /** Nothing to re-read here: the diagram and the controls observe changes themselves. */

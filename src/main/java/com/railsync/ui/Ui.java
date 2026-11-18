@@ -37,14 +37,14 @@ public final class Ui {
     /** The day all GUI times belong to (the app simulates one service day). */
     public static final LocalDate SERVICE_DAY = DemoScenarioLoader.SERVICE_DAY;
 
-    /** Colour for express trains (blue), used in tables and diagrams. */
-    public static final Color EXPRESS_COLOR = new Color(59, 111, 182);
+    /** Colour for express trains (steel blue), used in tables and diagrams. */
+    public static final Color EXPRESS_COLOR = new Color(0x2E6F9E);
     /** Colour for passenger trains (green). */
-    public static final Color PASSENGER_COLOR = new Color(46, 139, 87);
-    /** Colour for freight trains (amber). */
-    public static final Color FREIGHT_COLOR = new Color(196, 128, 42);
+    public static final Color PASSENGER_COLOR = new Color(0x2F8A57);
+    /** Colour for freight trains (signal amber, deepened to read on white). */
+    public static final Color FREIGHT_COLOR = new Color(0xD08A24);
     /** Colour for conflicts and failures (red). */
-    public static final Color CONFLICT_COLOR = new Color(192, 57, 43);
+    public static final Color CONFLICT_COLOR = new Color(0xC0392B);
 
     private static final DateTimeFormatter HH_MM = DateTimeFormatter.ofPattern("HH:mm");
 
@@ -105,16 +105,103 @@ public final class Ui {
      */
     public static JComponent header(String title, String subtitle) {
         JLabel titleLabel = new JLabel(title);
-        titleLabel.putClientProperty("FlatLaf.styleClass", "h2");
-        JLabel subtitleLabel = new JLabel(subtitle);
-        subtitleLabel.setForeground(Theme.mutedText());
+        titleLabel.putClientProperty("FlatLaf.style", "font: bold +9");
+        JLabel subtitleLabel = new MutedLabel(subtitle);
+        subtitleLabel.putClientProperty("FlatLaf.style", "font: +1");
         JPanel panel = new JPanel();
+        panel.setOpaque(false);
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.add(titleLabel);
-        panel.add(Box.createVerticalStrut(2));
+        panel.add(Box.createVerticalStrut(4));
         panel.add(subtitleLabel);
-        panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+        panel.setBorder(BorderFactory.createEmptyBorder(2, 2, 14, 0));
         return panel;
+    }
+
+    /**
+     * Wraps content in a plain card (no title), e.g. a table.
+     *
+     * @param body the content
+     * @return the card
+     */
+    public static Card card(JComponent body) {
+        Card card = new Card();
+        card.setBorder(BorderFactory.createEmptyBorder(6, 8, 8, 8));
+        card.add(body, BorderLayout.CENTER);
+        return card;
+    }
+
+    /**
+     * Creates a small coloured pill such as "ALLOCATED" or "EXPRESS".
+     *
+     * @param text  the text
+     * @param color the strong colour (text); the pill is a pale tint of it
+     * @return the badge label
+     */
+    public static JLabel badge(String text, Color color) {
+        JLabel label = new Badge();
+        label.setText(text);
+        label.setForeground(color);
+        return label;
+    }
+
+    /** @return the badge colour for a train's status */
+    public static Color colorFor(com.railsync.model.TrainStatus status) {
+        switch (status) {
+            case ALLOCATED:
+                return Theme.GOOD;
+            case UNALLOCATED:
+                return Theme.BAD;
+            default:
+                return Theme.WARN;
+        }
+    }
+
+    /** A label drawn as a rounded pill in a tint of its text colour. */
+    static final class Badge extends JLabel {
+        Badge() {
+            setOpaque(false);
+            setHorizontalAlignment(CENTER);
+            putClientProperty("FlatLaf.style", "font: bold -2");
+            setBorder(BorderFactory.createEmptyBorder(2, 9, 2, 9));
+        }
+
+        /** In dark mode the text is a lighter shade of the badge colour, so it stays easy to read. */
+        @Override
+        public Color getForeground() {
+            Color color = super.getForeground();
+            return Theme.isDark() && color != null ? Theme.mix(color, Color.WHITE, 0.4) : color;
+        }
+
+        /** Paints the pill behind the text. */
+        @Override
+        protected void paintComponent(java.awt.Graphics g) {
+            java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+            java.awt.FontMetrics fm = getFontMetrics(getFont());
+            int w = Math.min(getWidth() - 2, fm.stringWidth(getText()) + 18);
+            int h = Math.min(getHeight() - 2, fm.getHeight() + 4);
+            int x = getHorizontalAlignment() == LEFT ? 0 : (getWidth() - w) / 2;
+            int y = (getHeight() - h) / 2;
+            g2.setColor(Theme.tint(super.getForeground()));
+            g2.fillRoundRect(x, y, w, h, h, h);
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /** A label in the secondary text colour that stays correct when the theme changes. */
+    static final class MutedLabel extends JLabel {
+        MutedLabel(String text) {
+            super(text);
+        }
+
+        /** Re-reads the muted colour whenever the look and feel is (re)installed. */
+        @Override
+        public void updateUI() {
+            super.updateUI();
+            setForeground(Theme.mutedText());
+        }
     }
 
     /**
@@ -144,17 +231,18 @@ public final class Ui {
      */
     public static JPanel section(String title, JComponent body) {
         JLabel label = new JLabel(title);
-        label.putClientProperty("FlatLaf.styleClass", "h4");
-        label.setBorder(BorderFactory.createEmptyBorder(0, 2, 6, 0));
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.add(label, BorderLayout.NORTH);
-        panel.add(body, BorderLayout.CENTER);
-        return panel;
+        label.putClientProperty("FlatLaf.style", "font: bold +1");
+        label.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
+        Card card = new Card();
+        card.add(label, BorderLayout.NORTH);
+        card.add(body, BorderLayout.CENTER);
+        return card;
     }
 
-    /** @return a monospaced font for report text */
+    /** @return a monospaced font for report text (Consolas where available) */
     public static Font monoFont() {
-        return new Font(Font.MONOSPACED, Font.PLAIN, 13);
+        Font consolas = new Font("Consolas", Font.PLAIN, 13);
+        return consolas.getFamily().equals("Consolas") ? consolas : new Font(Font.MONOSPACED, Font.PLAIN, 13);
     }
 
     /**

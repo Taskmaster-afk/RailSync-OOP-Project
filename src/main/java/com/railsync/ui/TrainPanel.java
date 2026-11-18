@@ -31,7 +31,7 @@ import java.awt.FlowLayout;
  * Observes: every event, and reloads the table.</p>
  *
  * <p>OOP concepts: Inheritance (extends RefreshablePanel), [OBSERVER],
- * Polymorphism (TypeRenderer overrides getTableCellRendererComponent()).</p>
+ * Polymorphism (BadgeRenderer is a TableCellRenderer that JTable calls for the type and status columns).</p>
  */
 public class TrainPanel extends RefreshablePanel {
 
@@ -52,8 +52,15 @@ public class TrainPanel extends RefreshablePanel {
         table.setAutoCreateRowSorter(false);
         table.setRowSorter(new TableRowSorter<>(model));
         // Colour the Type and Status columns so categories and problems stand out.
-        table.getColumnModel().getColumn(3).setCellRenderer(new TypeRenderer());
-        table.getColumnModel().getColumn(10).setCellRenderer(new TypeRenderer());
+        table.getColumnModel().getColumn(3).setCellRenderer(new BadgeRenderer());
+        table.getColumnModel().getColumn(10).setCellRenderer(new BadgeRenderer());
+        // Room for the pills and the names; the narrow number columns give way first.
+        int[] widths = {45, 70, 150, 115, 65, 75, 60, 70, 60, 60, 125, 110, 105};
+        for (int i = 0; i < widths.length; i++) {
+            table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
+        }
+        table.getColumnModel().getColumn(3).setMinWidth(105);
+        table.getColumnModel().getColumn(10).setMinWidth(115);
 
         // Step 1: toolbar with search and actions.
         JButton find = new JButton("Find");
@@ -93,7 +100,7 @@ public class TrainPanel extends RefreshablePanel {
                 "Add, edit and search trains. Priority = base priority + type bonus (express +3, passenger +1, freight 0)."), BorderLayout.NORTH);
         north.add(toolRow, BorderLayout.CENTER);
         add(north, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        add(Ui.card(new JScrollPane(table)), BorderLayout.CENTER);
         refresh();
     }
 
@@ -195,26 +202,6 @@ public class TrainPanel extends RefreshablePanel {
             int viewRow = table.convertRowIndexToView(modelRow);
             table.setRowSelectionInterval(viewRow, viewRow);
             table.scrollRectToVisible(table.getCellRect(viewRow, 0, true));
-        }
-    }
-
-    /** Colours train types by category and UNALLOCATED status in red. */
-    private static final class TypeRenderer extends DefaultTableCellRenderer {
-        /** Swing calls this for every cell; we only adjust its colour or font. */
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean selected,
-                                                       boolean focused, int row, int column) {
-            Component cell = super.getTableCellRendererComponent(table, value, selected, focused, row, column);
-            if (!selected) {
-                if (value instanceof TrainType) {
-                    cell.setForeground(Ui.colorFor((TrainType) value));
-                } else if (value == TrainStatus.UNALLOCATED) {
-                    cell.setForeground(Ui.CONFLICT_COLOR);
-                } else {
-                    cell.setForeground(table.getForeground());
-                }
-            }
-            return cell;
         }
     }
 }

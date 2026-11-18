@@ -11,6 +11,8 @@ import com.railsync.observer.ScheduleEvent;
 import com.railsync.observer.ScheduleEventManager;
 import com.railsync.observer.ScheduleEventType;
 import com.railsync.strategy.PlatformAllocationStrategy;
+import com.railsync.strategy.PriorityAgingStrategy;
+import com.railsync.strategy.StrategyCatalog;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -369,6 +371,104 @@ public class SchedulingService {
         history.clear();
         recordResults(results);
         return results;
+    }
+
+    // ------------------------------------------------------------------
+    // Saving and restoring the session (used by the persistence layer).
+    // ------------------------------------------------------------------
+
+    /**
+     * Takes a complete picture of the live session for storage. The objects
+     * themselves are shared (not copied); the storage layer only reads them.
+     *
+     * @return platforms, trains, bookings, given-up trains and settings
+     */
+    public StationSnapshot takeSnapshot() {
+        // Step 1: bookings by id, so the storage layer never needs object references.
+        List<StationSnapshot.Booking> bookings = new ArrayList<>();
+        for (PlatformReservation booking : schedule.getAllReservations()) {
+            bookings.add(new StationSnapshot.Booking(booking.getTrain().getId(),
+                    booking.getPlatform().getId(), booking.getStart()));
+        }
+        // Step 2: trains that were given up keep that status after a restart.
+        Set<String> unallocated = new java.util.HashSet<>();
+        for (Train train : trainManager.getAllTrains()) {
+            if (train.getStatus() == com.railsync.model.TrainStatus.UNALLOCATED) {
+                unallocated.add(train.getId());
+            }
+        }
+        // Step 3: the settings, including the aging rate if aging is in use.
+        int agingRate = strategy instanceof PriorityAgingStrategy
+                ? ((PriorityAgingStrategy) strategy).getMinutesPerPriorityPoint()
+                : PriorityAgingStrategy.DEFAULT_MINUTES_PER_POINT;
+        StationSnapshot.Settings settings = new StationSnapshot.Settings(strategy.getName(), agingRate,
+                schedule.getClearanceBufferMinutes(), allocator.getMaxWaitMinutes(),
+                allocator.isPreemptionEnabled(), conflictsDetected);
+        return new StationSnapshot(station.getPlatforms(), trainManager.getAllTrains(), bookings, unallocated, settings);
+    }
+
+    /**
+     * Replaces the live session with a saved one. Every platform, train and
+     * booking passes through the normal rules again (constructors, compatibility
+     * and the clash check in Schedule.reserve), so damaged saved data is
+     * rejected with an exception instead of producing an impossible plan.
+     *
+     * @param snapshot the saved session
+     * @throws RailSyncException if the saved data breaks a rule
+     */
+    public void restore(StationSnapshot snapshot) {
+        // Step 1: start from an empty station.
+        clearEverything();
+        // Step 2: settings first, because the clearance buffer decides which bookings fit.
+        StationSnapshot.Settings settings = snapshot.getSettings();
+        schedule.setClearanceBufferMinutes(settings.getClearanceBufferMinutes());
+        allocator.setMaxWaitMinutes(settings.getMaxWaitMinutes());
+        allocator.setPreemptionEnabled(settings.isPreemptionEnabled());
+        this.strategy = findStrategy(settings.getStrategyName(), settings.getAgingMinutesPerPoint());
+        // Step 3: platforms and trains (already validated by their constructors).
+        for (Platform platform : snapshot.getPlatforms()) {
+            platformManager.addPlatform(platform);
+        }
+        java.util.Map<String, Train> trainsById = new java.util.HashMap<>();
+        for (Train train : snapshot.getTrains()) {
+            trainManager.addTrain(train);
+            trainsById.put(train.getId(), train);
+        }
+        // Step 4: bookings, each re-checked by Schedule.reserve().
+        for (StationSnapshot.Booking saved : snapshot.getBookings()) {
+            Train train = trainsById.get(saved.getTrainId());
+            Platform platform = station.findPlatformById(saved.getPlatformId());
+            if (train == null || platform == null) {
+                throw new RailSyncException("Saved booking refers to a missing train or platform ("
+                        + saved.getTrainId() + " / " + saved.getPlatformId() + ").");
+            }
+            schedule.reserve(train, platform, saved.getStart());
+        }
+        // Step 5: trains that had been given up stay given up.
+        for (String id : snapshot.getUnallocatedTrainIds()) {
+            Train train = trainsById.get(id);
+            if (train != null && schedule.findReservation(train) == null) {
+                train.markUnallocated();
+            }
+        }
+        conflictsDetected = settings.getConflictsDetected();
+        history.clear();
+        events.publish(new ScheduleEvent(ScheduleEventType.SCHEDULE_RESET, "Restored the saved session: "
+                + snapshot.getTrains().size() + " trains, " + snapshot.getPlatforms().size() + " platforms, "
+                + snapshot.getBookings().size() + " bookings"));
+    }
+
+    /** @return a fresh strategy with this display name (FCFS if the name is unknown) */
+    private static PlatformAllocationStrategy findStrategy(String name, int agingRate) {
+        for (PlatformAllocationStrategy candidate : StrategyCatalog.createAll()) {
+            if (candidate.getName().equals(name)) {
+                if (candidate instanceof PriorityAgingStrategy) {
+                    ((PriorityAgingStrategy) candidate).setMinutesPerPriorityPoint(agingRate);
+                }
+                return candidate;
+            }
+        }
+        return StrategyCatalog.createAll().get(0);
     }
 
     // ------------------------------------------------------------------
