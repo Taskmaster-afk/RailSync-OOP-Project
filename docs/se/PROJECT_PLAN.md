@@ -3,8 +3,8 @@
 This document records how the RailSync project was organised: the process model, the work breakdown, milestones
 and schedule, roles and responsibilities, effort estimation, risks, and how the team communicated.
 
-> Team members are referred to as **Member 1 to Member 4**; their names, roll numbers and roles are listed in
-> [CONTRIBUTIONS.md](CONTRIBUTIONS.md).
+> The team has three members: **Soumil** (IIT2025064), **Kushagra** (IIT2025036) and **Abeer** (IIT2025047).
+> Their roles and contributions are listed in [CONTRIBUTIONS.md](CONTRIBUTIONS.md).
 
 ---
 
@@ -42,7 +42,8 @@ RailSync
 ├── 2 Requirements
 │   ├── 2.1 Domain study and stakeholder analysis
 │   ├── 2.2 SRS (functional and non-functional requirements)
-│   └── 2.3 Use-case specifications and traceability
+│   ├── 2.3 Use-case specifications and traceability
+│   └── 2.4 Data flow diagrams (Levels 0, 1 and 2)
 ├── 3 Design
 │   ├── 3.1 Architecture and package structure
 │   ├── 3.2 Class, sequence, activity and state diagrams
@@ -87,23 +88,24 @@ RailSync
 
 | WBS | Task | Owner | W1 | W2 | W3 | W4 | W5 | W6 | W7 | W8 | W9 | W10 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 2.1 | Domain study, stakeholders | Member 1 | ■ | | | | | | | | | |
-| 2.2 | SRS | Member 1 | ■ | ■◆ | | | | | | | | |
-| 2.3 | Use cases, traceability | Member 1 | | ■ | | | | | | | ■ | |
-| 3.1 | Architecture | Member 3 | | ■ | ■◆ | | | | | | | |
-| 3.2 | UML diagrams | Member 1, 2, 4 | | ■ | ■ | | | | | ■ | ■ | |
-| 3.3 | Database schema | Member 3 | | | ■ | | | | | ■ | | |
-| 3.4 | UI design | Member 4 | | | ■ | | | ■ | | | ■ | |
-| 4.1 | Domain model | Member 1 | | | ■ | ■ | | | | | | |
-| 4.2 | Scheduling engine | Member 2 | | | | ■ | ■◆ | | | | | |
-| 4.3 | Services, CSV, undo | Member 3 | | | | ■ | ■ | | | ■ | | |
-| 4.4 | Persistence (SQLite) | Member 3 | | | | | | | | ■◆ | | |
-| 4.5 | User interface | Member 4 | | | | | | ■ | ■◆ | | ■ | |
-| 4.5 | Diagrams, yard view, arena | Member 2, 4 | | | | | | ■ | ■ | | | |
-| 5.1 | Unit and boundary tests | Member 1, 2 | | | ■ | ■ | ■ | | | | ■ | |
-| 5.2 | Integration tests | Member 2, 3 | | | | | ■ | ■ | | ■ | | |
-| 5.3 | System and performance tests | Member 4 | | | | | | | | | ■◆ | |
-| 5.4 | Manual tests, test report | Member 4 | | | | | | | | | ■ | ■ |
+| 2.1 | Domain study, stakeholders | Soumil | ■ | | | | | | | | | |
+| 2.2 | SRS | Soumil | ■ | ■◆ | | | | | | | | |
+| 2.3 | Use cases, traceability | Soumil | | ■ | | | | | | | ■ | |
+| 2.4 | Data flow diagrams | Soumil, Kushagra, Abeer | | ■ | ■ | | | | | ■ | | |
+| 3.1 | Architecture | Abeer | | ■ | ■◆ | | | | | | | |
+| 3.2 | UML diagrams | All | | ■ | ■ | | | | | ■ | ■ | |
+| 3.3 | Database schema | Abeer | | | ■ | | | | | ■ | | |
+| 3.4 | UI design | Soumil | | | ■ | | | ■ | | | ■ | |
+| 4.1 | Domain model | Soumil | | | ■ | ■ | | | | | | |
+| 4.2 | Scheduling engine | Kushagra | | | | ■ | ■◆ | | | | | |
+| 4.3 | Services, CSV, undo | Abeer | | | | ■ | ■ | | | ■ | | |
+| 4.4 | Persistence (SQLite) | Abeer | | | | | | | | ■◆ | | |
+| 4.5 | User interface screens | Soumil | | | | | | ■ | ■◆ | | ■ | |
+| 4.5 | Diagrams, yard view, arena | Kushagra | | | | | | ■ | ■ | | | |
+| 5.1 | Unit and boundary tests | Soumil, Kushagra | | | ■ | ■ | ■ | | | | ■ | |
+| 5.2 | Integration tests | Kushagra, Abeer | | | | | ■ | ■ | | ■ | | |
+| 5.3 | System and performance tests | Soumil, Abeer | | | | | | | | | ■◆ | |
+| 5.4 | Manual tests, test report | Abeer | | | | | | | | | ■ | ■ |
 | 6.x | Documentation | All | | | | | | | | ■ | ■ | ■◆ |
 | 1.3 | Report and presentation | All | | | | | | | | | ■ | ■ |
 
@@ -113,30 +115,30 @@ RailSync
 
 | Member | Role | Main responsibilities |
 |---|---|---|
-| Member 1 | Project coordinator and requirements analyst | Schedule and meetings; SRS, use cases, traceability; domain model; use-case and state diagrams; unit and boundary tests |
-| Member 2 | Scheduling engineer | Strategies, allocator, preemption, delays and breakdowns; activity and sequence diagrams; algorithm documentation; integration tests for the engine |
-| Member 3 | Architect and data engineer | Architecture; service facade, observer, CSV, undo; SQLite persistence and audit log; component, deployment and ER diagrams; QA report and maintenance plan |
-| Member 4 | UI designer and test lead | All screens, diagrams and theme; comparison arena screen; test plan; system, performance and manual tests; user guide |
+| Soumil | Project coordinator, requirements analyst and UI developer | Schedule and meetings; SRS, use cases, traceability; Level 0 and 1 DFDs; domain model; screens and theme; use-case and state diagrams; unit, boundary and system tests; user guide |
+| Kushagra | Scheduling engineer and visualisation developer | Strategies, allocator, preemption, delays and breakdowns; metrics and comparison arena; time-distance diagram and yard view; Level 2 DFDs for 3.0 and 4.0; activity and sequence diagrams; engine integration tests |
+| Abeer | Architect, data engineer and test lead | Architecture; service facade, observer, CSV, undo; SQLite persistence and audit log; Level 2 DFD for 8.0; component, deployment and ER diagrams; test plan, persistence, performance and manual tests; QA report and maintenance plan |
 
 ### 5.1 RACI matrix
 
 R = responsible (does the work), A = accountable (signs off), C = consulted, I = informed.
 
-| Activity | Member 1 | Member 2 | Member 3 | Member 4 |
-|---|---|---|---|---|
-| Project plan and schedule | A/R | C | C | C |
-| Requirements (SRS, use cases) | A/R | C | C | C |
-| Architecture and design decisions | C | C | A/R | C |
-| Domain model | A/R | C | C | I |
-| Scheduling algorithms | C | A/R | I | I |
-| Services, CSV, undo | I | C | A/R | C |
-| Database and persistence | I | I | A/R | C |
-| User interface | C | C | C | A/R |
-| UML diagrams | R | R | R | R |
-| Test plan and system testing | C | R | R | A/R |
-| QA report and maintenance plan | C | C | A/R | C |
-| User guide | C | I | C | A/R |
-| Final report and presentation | A/R | R | R | R |
+| Activity | Soumil | Kushagra | Abeer |
+|---|---|---|---|
+| Project plan and schedule | A/R | C | C |
+| Requirements (SRS, use cases) | A/R | C | C |
+| Data flow diagrams | A/R | R | R |
+| Architecture and design decisions | C | C | A/R |
+| Domain model | A/R | C | C |
+| Scheduling algorithms | C | A/R | I |
+| Services, CSV, undo | I | C | A/R |
+| Database and persistence | I | I | A/R |
+| User interface | A/R | R | C |
+| UML diagrams | R | R | R |
+| Test plan and system testing | R | R | A/R |
+| QA report and maintenance plan | C | C | A/R |
+| User guide | A/R | I | C |
+| Final report and presentation | A/R | R | R |
 
 ---
 
@@ -144,15 +146,15 @@ R = responsible (does the work), A = accountable (signs off), C = consulted, I =
 
 ### 6.1 Bottom-up estimate (planned hours)
 
-| WBS area | Member 1 | Member 2 | Member 3 | Member 4 | Total |
-|---|---|---|---|---|---|
-| Management and meetings | 10 | 5 | 5 | 5 | 25 |
-| Requirements | 16 | 3 | 3 | 3 | 25 |
-| Design and UML | 6 | 8 | 10 | 8 | 32 |
-| Implementation | 16 | 30 | 28 | 30 | 104 |
-| Testing | 10 | 12 | 10 | 14 | 46 |
-| Documentation, report, presentation | 12 | 12 | 14 | 10 | 48 |
-| **Total** | **70** | **70** | **70** | **70** | **280** |
+| WBS area | Soumil | Kushagra | Abeer | Total |
+|---|---|---|---|---|
+| Management and meetings | 12 | 5 | 6 | 23 |
+| Requirements and DFDs | 16 | 4 | 5 | 25 |
+| Design and UML | 8 | 10 | 14 | 32 |
+| Implementation | 30 | 40 | 34 | 104 |
+| Testing | 12 | 16 | 18 | 46 |
+| Documentation, report, presentation | 15 | 18 | 16 | 49 |
+| **Total** | **93** | **93** | **93** | **279** |
 
 ### 6.2 COCOMO (basic, organic mode) as a cross-check
 
@@ -168,9 +170,9 @@ With about 12.6 thousand delivered lines of code (KLOC):
 with other systems, deployment and support, and it counts every line as hand-written production code. It
 therefore overestimates a student project, where a large share of the lines are comments and documentation
 written to the course standard, the scope is one desktop program, and there is no deployment or support phase.
-The estimate is still useful: it shows that the product is substantial for four people and justified fixing
-the scope early (one station, one day) and freezing features at week 8. The team-size figure (≈ 3.6) matches a
-four-person team.
+The estimate is still useful: it shows that the product is substantial for three people and justified fixing
+the scope early (one station, one day) and freezing features at week 8. The team-size figure (≈ 3.6) is close to our
+team of three.
 
 ---
 

@@ -146,6 +146,7 @@ See [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for every screen.
 |---|---|
 | [docs/se/SRS.md](docs/se/SRS.md) | Software Requirements Specification: users, constraints, 45 functional and 20 non-functional requirements |
 | [docs/se/REQUIREMENTS_ANALYSIS.md](docs/se/REQUIREMENTS_ANALYSIS.md) | Stakeholders, actors, use-case specifications, prioritisation, traceability matrix |
+| [docs/se/DFD.md](docs/se/DFD.md) | Data flow diagrams: context diagram (Level 0), Level 1 and three Level 2 diagrams |
 | [docs/se/ARCHITECTURE.md](docs/se/ARCHITECTURE.md) | Architecture, modules and responsibilities, design decisions, data and interface design |
 | [docs/se/TEST_PLAN.md](docs/se/TEST_PLAN.md) | Test strategy, techniques (equivalence classes, boundary values), all test cases, test report |
 | [docs/se/QUALITY_ASSURANCE.md](docs/se/QUALITY_ASSURANCE.md) | Reliability, maintainability, security, usability, performance: measures and evidence |
